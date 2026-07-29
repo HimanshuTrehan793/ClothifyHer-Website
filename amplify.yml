@@ -1,0 +1,22 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Prefer `npm ci` (reproducible) when lockfile is present, fall back otherwise.
+        - npm ci || npm install
+    build:
+      commands:
+        # vite.config.ts now generates the sitemap (with dynamic product +
+        # category URLs from the live API) as part of the build.
+        # Look for "[sitemap] total dynamicRoutes: N" in the build log to
+        # confirm dynamic URLs were fetched.
+        - npm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - ~/.npm/**/*
