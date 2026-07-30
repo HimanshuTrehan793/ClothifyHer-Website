@@ -1,19 +1,40 @@
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap");
 @import "tailwindcss";
 
 html,
 body,
 #root {
-  height: 100svh;
+  min-height: 100svh;
   font-family: "Outfit", sans-serif;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  overflow-y: scroll;
 }
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @theme {
+  /* ── Modern Heritage type scale ───────────────────────────────────
+     Serif carries the editorial voice (hero, section titles).
+     Sans handles everything functional (prices, nav, labels).        */
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+
+  /* ── Royal maroon: the single accent that carries the brand ────── */
+  --color-maroon-50: #fdf4f5;
+  --color-maroon-100: #fae6e9;
+  --color-maroon-200: #f4ccd3;
+  --color-maroon-300: #e9a2ae;
+  --color-maroon-500: #b32d45;
+  --color-maroon-600: #97203a;
+  --color-maroon-700: #7b1a30;
+  --color-maroon-800: #641526;
+  --color-maroon-900: #4f101d;
+
+  /* ── Gold: reserved for badges, rings and hairlines only ───────── */
+  --color-gold-300: #e2cd8f;
+  --color-gold-400: #d4b45c;
+  --color-gold-500: #c9a227;
+
   --shadow-variant-card: 0 4px 8px 0 rgba(2, 6, 12, 0.08);
   --shadow-cart-card:
     0 8px 16px rgba(27, 30, 36, 0.06), 0 0 8px rgba(27, 30, 36, 0.04);
@@ -200,6 +221,27 @@ body,
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Scrim behind text sitting on top of photography — keeps the copy
+   legible without dimming the garment itself. */
+.img-scrim {
+  background: linear-gradient(
+    to top,
+    rgba(20, 8, 10, 0.78) 0%,
+    rgba(20, 8, 10, 0.35) 38%,
+    rgba(20, 8, 10, 0) 68%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 .my-toast {

@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router";
+import { MainLayout } from "@/components/layout/MainLayout";
+import Home from "@/pages/Home/Home";
 
 function App() {
   return (
@@ -7,12 +9,9 @@ function App() {
         <Route
           path="/"
           element={
-            <main className="flex h-full flex-col items-center justify-center gap-2">
-              <h1 className="text-2xl font-semibold">ClothifyHer</h1>
-              <p className="text-muted-foreground text-sm">
-                Add your routes in src/App.tsx
-              </p>
-            </main>
+            <MainLayout bagCount={3}>
+              <Home />
+            </MainLayout>
           }
         />
       </Routes>
