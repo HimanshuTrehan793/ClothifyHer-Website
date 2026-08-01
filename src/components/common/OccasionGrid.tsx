@@ -4,7 +4,7 @@ import type { Occasion } from "@/interfaces/catalog";
 
 export function OccasionGrid({ occasions }: { occasions: Occasion[] }) {
   return (
-    <section id="occasions" className="py-12 sm:py-16">
+    <section id="occasions" className="scroll-mt-28 py-12 sm:py-16">
       <SectionHeading
         title="Shop by Occasion"
         subtitle="Dressed for the moment, whatever it calls for"

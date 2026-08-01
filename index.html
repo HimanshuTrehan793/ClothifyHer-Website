@@ -2,19 +2,24 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#e11d74" />
+    <meta name="theme-color" content="#5A1D29" />
+
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
 
     <!-- Primary meta tags -->
-    <title>ClothifyHer - Shop Women's Fashion &amp; Ethnic Wear Online</title>
+    <title>ClothifyHer — Kurtas, Dresses &amp; Co-ord Sets for Women</title>
     <meta
       name="description"
-      content="Shop the latest women's fashion at ClothifyHer. Kurtis, sarees, dresses, tops and ethnic wear with fast delivery across India."
+      content="Shop women's kurtas, dresses, co-ord sets, tops and bottom wear at ClothifyHer. Style, comfort and confidence — delivered across India."
     />
     <meta
       name="keywords"
-      content="women clothing, kurti, saree, ethnic wear, dresses, tops, online fashion, clothifyher"
+      content="women clothing, kurtas, dresses, co-ord sets, tops, bottom wear, ethnic wear, online fashion, clothifyher"
     />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <link rel="canonical" href="https://clothifyher.com/" />
@@ -25,23 +30,28 @@
     <meta property="og:url" content="https://clothifyher.com/" />
     <meta
       property="og:title"
-      content="ClothifyHer - Shop Women's Fashion &amp; Ethnic Wear Online"
+      content="ClothifyHer — Kurtas, Dresses &amp; Co-ord Sets for Women"
     />
     <meta
       property="og:description"
-      content="Kurtis, sarees, dresses and more — delivered to your doorstep."
+      content="Style · Comfort · Confidence. Kurtas, dresses, co-ord sets, tops and bottom wear delivered across India."
     />
-    <meta property="og:image" content="https://clothifyher.com/og-image.jpg" />
+    <meta property="og:image" content="https://clothifyher.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:locale" content="en_IN" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="ClothifyHer - Women's Fashion Online" />
+    <meta
+      name="twitter:title"
+      content="ClothifyHer — Women's Fashion Online"
+    />
     <meta
       name="twitter:description"
-      content="Kurtis, sarees, dresses and more — delivered fast."
+      content="Style · Comfort · Confidence. Kurtas, dresses, co-ord sets and more."
     />
-    <meta name="twitter:image" content="https://clothifyher.com/og-image.jpg" />
+    <meta name="twitter:image" content="https://clothifyher.com/og-image.png" />
 
     <!-- Structured data: Organization -->
     <script type="application/ld+json">
@@ -50,8 +60,9 @@
         "@type": "Organization",
         "name": "ClothifyHer",
         "url": "https://clothifyher.com",
-        "logo": "https://clothifyher.com/logo.png",
-        "description": "Women's fashion and ethnic wear delivered across India.",
+        "logo": "https://clothifyher.com/icon-512.png",
+        "slogan": "Style · Comfort · Confidence",
+        "description": "Women's kurtas, dresses, co-ord sets, tops and bottom wear delivered across India.",
         "address": {
           "@type": "PostalAddress",
           "addressCountry": "IN"
@@ -59,7 +70,7 @@
       }
     </script>
 
-    <!-- Structured data: WebSite + SearchAction -->
+    <!-- Structured data: WebSite + SearchAction (enables sitelinks search box) -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -70,10 +81,62 @@
           "@type": "SearchAction",
           "target": {
             "@type": "EntryPoint",
-            "urlTemplate": "https://clothifyher.com/?q={search_term_string}"
+            "urlTemplate": "https://clothifyher.com/search?q={search_term_string}"
           },
           "query-input": "required name=search_term_string"
         }
+      }
+    </script>
+
+    <!-- Structured data: site navigation (hint for sitelinks) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "itemListElement": [
+          {
+            "@type": "SiteNavigationElement",
+            "position": 1,
+            "name": "New Arrivals",
+            "url": "https://clothifyher.com/new-arrivals"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "position": 2,
+            "name": "Best Sellers",
+            "url": "https://clothifyher.com/best-sellers"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "position": 3,
+            "name": "Kurtas",
+            "url": "https://clothifyher.com/women/kurtas"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "position": 4,
+            "name": "Dresses",
+            "url": "https://clothifyher.com/women/dresses"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "position": 5,
+            "name": "Co-ord Sets",
+            "url": "https://clothifyher.com/women/co-ord-sets"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "position": 6,
+            "name": "Collections",
+            "url": "https://clothifyher.com/collections"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "position": 7,
+            "name": "Sale",
+            "url": "https://clothifyher.com/sale"
+          }
+        ]
       }
     </script>
   </head>

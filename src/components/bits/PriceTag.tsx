@@ -11,7 +11,12 @@ export function PriceTag({ price, mrp, className }: PriceTagProps) {
   const off = mrp ? discountPercent(mrp, price) : 0;
 
   return (
-    <p className={cn("flex flex-wrap items-baseline gap-x-2 gap-y-0.5", className)}>
+    <p
+      className={cn(
+        "flex flex-wrap items-baseline gap-x-2 gap-y-0.5",
+        className,
+      )}
+    >
       <span className="text-[15px] font-semibold text-stone-900">
         {formatPrice(price)}
       </span>

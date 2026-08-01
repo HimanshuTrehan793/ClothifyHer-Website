@@ -9,7 +9,7 @@ export function CategoryStoryCard({ story }: { story: CategoryStory }) {
       className="group flex w-[76px] shrink-0 flex-col items-center gap-2 sm:w-[92px]"
     >
       <span className="from-gold-400 via-maroon-600 to-gold-400 rounded-full bg-gradient-to-tr p-[2px] transition-transform duration-300 group-hover:scale-105">
-        <span className="block rounded-full bg-stone-50 p-[3px]">
+        <span className="bg-cream-50 block rounded-full p-[3px]">
           <img
             src={story.image}
             alt=""

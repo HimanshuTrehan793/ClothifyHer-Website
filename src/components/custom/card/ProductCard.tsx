@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { PriceTag } from "@/components/bits/PriceTag";
+import { ProductCardMedia } from "@/components/bits/ProductCardMedia";
 import { WishlistButton } from "@/components/bits/WishlistButton";
 import type { Product } from "@/interfaces/catalog";
 
@@ -16,14 +17,8 @@ export function ProductCard({
 }: ProductCardProps) {
   return (
     <Link to={`/products/${product.id}`} className="group block">
-      <div className="relative overflow-hidden rounded-2xl bg-stone-200">
-        {/* 3:4 keeps the tall, editorial crop fashion product shots need. */}
-        <img
-          src={product.image}
-          alt={product.title}
-          loading="lazy"
-          className="aspect-[3/4] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-        />
+      <div className="relative">
+        <ProductCardMedia product={product} />
 
         {product.badge && (
           <span className="bg-maroon-800/95 absolute top-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wider text-white uppercase">

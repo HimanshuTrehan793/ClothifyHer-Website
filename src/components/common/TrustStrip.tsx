@@ -20,7 +20,7 @@ const PROMISES = [
 
 export function TrustStrip() {
   return (
-    <section className="border-y border-stone-200 bg-stone-50">
+    <section className="border-maroon-100 bg-cream-50 border-y">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-8 sm:grid-cols-3 sm:px-6 lg:px-10">
         {PROMISES.map(({ icon: Icon, title, caption }) => (
           <div key={title} className="flex items-center gap-3">

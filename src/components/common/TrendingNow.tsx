@@ -1,26 +1,27 @@
-import { useState } from "react";
 import { SectionHeading } from "@/components/bits/SectionHeading";
 import { ProductCard } from "@/components/custom/card/ProductCard";
 import type { Product } from "@/interfaces/catalog";
 
-export function TrendingNow({ products }: { products: Product[] }) {
-  // Local until the wishlist API lands — see src/features/wishlist.
-  const [wishlisted, setWishlisted] = useState<Set<string>>(new Set());
+interface TrendingNowProps {
+  id?: string;
+  title?: string;
+  subtitle?: string;
+  products: Product[];
+  wishlisted: Set<string>;
+  onToggleWishlist: (productId: string) => void;
+}
 
-  const toggle = (productId: string) =>
-    setWishlisted((prev) => {
-      const next = new Set(prev);
-      if (!next.delete(productId)) next.add(productId);
-      return next;
-    });
-
+export function TrendingNow({
+  id = "trending",
+  title = "Trending Now",
+  subtitle = "What everyone's adding to their bag this week",
+  products,
+  wishlisted,
+  onToggleWishlist,
+}: TrendingNowProps) {
   return (
-    <section className="bg-stone-100/60 py-12 sm:py-16">
-      <SectionHeading
-        title="Trending Now"
-        subtitle="What everyone's adding to their bag this week"
-        action={{ label: "View all", href: "/collections/trending" }}
-      />
+    <section id={id} className="bg-cream-100/60 scroll-mt-28 py-12 sm:py-16">
+      <SectionHeading title={title} subtitle={subtitle} />
 
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-4 gap-y-8 px-4 sm:px-6 md:grid-cols-3 lg:grid-cols-4 lg:px-10">
         {products.map((product) => (
@@ -28,7 +29,7 @@ export function TrendingNow({ products }: { products: Product[] }) {
             key={product.id}
             product={product}
             wishlisted={wishlisted.has(product.id)}
-            onToggleWishlist={toggle}
+            onToggleWishlist={onToggleWishlist}
           />
         ))}
       </div>

@@ -1,20 +1,15 @@
+import { AnnouncementBar } from "@/components/navigation/AnnouncementBar";
 import { TopNavBar } from "@/components/navigation/TopNavBar";
-import { BottomNavBar } from "@/components/navigation/BottomNavBar";
 import type { LayoutProps } from "@/interfaces/navigation";
 
-interface MainLayoutProps extends LayoutProps {
-  bagCount?: number;
-}
-
-export function MainLayout({ children, bagCount }: MainLayoutProps) {
+export function MainLayout({ children }: LayoutProps) {
   return (
-    <div className="flex min-h-svh flex-col bg-stone-50">
-      <TopNavBar bagCount={bagCount} />
+    <div className="bg-cream-50 flex min-h-svh flex-col">
+      {/* Above the sticky header so it scrolls away rather than pinning. */}
+      <AnnouncementBar />
+      <TopNavBar />
 
-      {/* pb clears the fixed mobile tab bar; it collapses at lg. */}
-      <main className="flex-1 pb-20 lg:pb-0">{children}</main>
-
-      <BottomNavBar />
+      <main className="flex-1">{children}</main>
     </div>
   );
 }

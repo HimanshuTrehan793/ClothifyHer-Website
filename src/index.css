@@ -19,21 +19,31 @@ body,
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Playfair Display", ui-serif, Georgia, serif;
 
-  /* ── Royal maroon: the single accent that carries the brand ────── */
-  --color-maroon-50: #fdf4f5;
-  --color-maroon-100: #fae6e9;
-  --color-maroon-200: #f4ccd3;
-  --color-maroon-300: #e9a2ae;
-  --color-maroon-500: #b32d45;
-  --color-maroon-600: #97203a;
-  --color-maroon-700: #7b1a30;
-  --color-maroon-800: #641526;
-  --color-maroon-900: #4f101d;
+  /* ── Brand maroon ────────────────────────────────────────────────
+     maroon-800 (#5A1D29) is sampled straight from the ClothifyHer logo
+     artwork. Keep it exact — the reversed lockup has that background
+     baked in, so any maroon surface behind it must match.            */
+  --color-maroon-50: #fbf5f6;
+  --color-maroon-100: #f5e8ea;
+  --color-maroon-200: #e8cdd2;
+  --color-maroon-300: #d3a3ac;
+  --color-maroon-400: #a85c6c;
+  --color-maroon-500: #8a3546;
+  --color-maroon-600: #6f2434;
+  --color-maroon-700: #631f2e;
+  --color-maroon-800: #5a1d29;
+  --color-maroon-900: #40141d;
 
-  /* ── Gold: reserved for badges, rings and hairlines only ───────── */
-  --color-gold-300: #e2cd8f;
-  --color-gold-400: #d4b45c;
-  --color-gold-500: #c9a227;
+  /* ── Brand gold (#B39769) — badges, rings and hairlines only ───── */
+  --color-gold-300: #d9c6a3;
+  --color-gold-400: #c6ac82;
+  --color-gold-500: #b39769;
+  --color-gold-600: #997f55;
+
+  /* ── Brand cream (#F3EEE4) — the page ground ───────────────────── */
+  --color-cream-50: #fdfbf7;
+  --color-cream-100: #f3eee4;
+  --color-cream-200: #e7dfd0;
 
   --shadow-variant-card: 0 4px 8px 0 rgba(2, 6, 12, 0.08);
   --shadow-cart-card:
@@ -81,6 +91,17 @@ body,
   }
   100% {
     width: 100%;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

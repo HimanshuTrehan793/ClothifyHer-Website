@@ -5,7 +5,12 @@ import type { BottomNavItem } from "@/interfaces/navigation";
 
 const ITEMS: BottomNavItem[] = [
   { id: "home", label: "Home", href: "/", icon: Home },
-  { id: "categories", label: "Categories", href: "/categories", icon: LayoutGrid },
+  {
+    id: "categories",
+    label: "Categories",
+    href: "/categories",
+    icon: LayoutGrid,
+  },
   { id: "studio", label: "Studio", href: "/studio", icon: Sparkles },
   { id: "profile", label: "Profile", href: "/profile", icon: User },
 ];
@@ -15,7 +20,7 @@ export function BottomNavBar() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-stone-50/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
+      className="border-maroon-100 bg-cream-50/95 fixed inset-x-0 bottom-0 z-50 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
     >
       <ul className="mx-auto flex max-w-md items-stretch">
         {ITEMS.map(({ id, label, href, icon: Icon }) => (
