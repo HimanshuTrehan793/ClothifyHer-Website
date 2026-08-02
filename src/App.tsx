@@ -7,6 +7,7 @@ import Cart from "@/pages/Cart/Cart";
 import Wishlist from "@/pages/Wishlist/Wishlist";
 import ProductDetail from "@/pages/ProductDetail/ProductDetail";
 import CategoryListing from "@/pages/Categories/CategoryListing";
+import Search from "@/pages/Search/Search";
 import Orders from "@/pages/Orders/Orders";
 import OrderDetail from "@/pages/Orders/OrderDetail/OrderDetail";
 
@@ -23,6 +24,7 @@ function App() {
               element={<CategoryListing />}
             />
             <Route path="/products/:productId" element={<ProductDetail />} />
+            <Route path="/search" element={<Search />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/orders" element={<Orders />} />
