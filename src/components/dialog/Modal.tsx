@@ -29,6 +29,16 @@ export function Modal({
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
 
+  /* Callers pass an inline arrow, so `onClose` has a new identity every
+     render. Held in a ref so the effect below can depend on `open` alone —
+     with `onClose` in the deps, every keystroke tore the effect down and its
+     cleanup stole focus back to the trigger, letting you type one character
+     at a time. */
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     if (!open) return;
 
@@ -43,7 +53,7 @@ export function Modal({
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== "Tab" || !panelRef.current) return;
@@ -71,7 +81,7 @@ export function Modal({
       document.body.style.overflow = "";
       restoreRef.current?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 

@@ -8,6 +8,7 @@ import Wishlist from "@/pages/Wishlist/Wishlist";
 import ProductDetail from "@/pages/ProductDetail/ProductDetail";
 import CategoryListing from "@/pages/Categories/CategoryListing";
 import Search from "@/pages/Search/Search";
+import Profile from "@/pages/Profile/Profile";
 import Orders from "@/pages/Orders/Orders";
 import OrderDetail from "@/pages/Orders/OrderDetail/OrderDetail";
 
@@ -27,6 +28,7 @@ function App() {
             <Route path="/search" element={<Search />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/wishlist" element={<Wishlist />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/orders/:orderId" element={<OrderDetail />} />
           </Routes>

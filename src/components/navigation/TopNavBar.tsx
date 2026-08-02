@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
-import { ChevronDown, Heart, Menu, Search, ShoppingBag, X } from "lucide-react";
+import {
+  ChevronDown,
+  Heart,
+  Menu,
+  Search,
+  ShoppingBag,
+  User,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/bits/Logo";
 import { PRIMARY_NAV, type PrimaryNavItem } from "@/config/navigation";
@@ -94,7 +102,13 @@ export function TopNavBar() {
               {bagCount > 0 && <Badge count={bagCount} />}
             </IconLink>
 
-            {!isAuthenticated && (
+            {/* Signed in → straight to the account. Signed out → the login
+                modal, so the user is never bounced to a gated page first. */}
+            {isAuthenticated ? (
+              <IconLink to="/profile" label="Your profile">
+                <User className="h-[22px] w-[22px]" strokeWidth={1.75} />
+              </IconLink>
+            ) : (
               <button
                 type="button"
                 onClick={() => dispatch(openLogin("account"))}

@@ -5,6 +5,8 @@ export const ACCESS_TOKEN_KEY = "accessToken";
 export const CART_STORAGE_KEY = "clothifyher.cart";
 export const WISHLIST_STORAGE_KEY = "clothifyher.wishlist";
 export const RECENT_SEARCHES_KEY = "clothifyher.recentSearches";
+export const PROFILE_STORAGE_KEY = "clothifyher.profile";
+export const ADDRESSES_STORAGE_KEY = "clothifyher.addresses";
 
 export const CURRENCY_SYMBOL = "₹";
 export const DEFAULT_PAGE_SIZE = 20;

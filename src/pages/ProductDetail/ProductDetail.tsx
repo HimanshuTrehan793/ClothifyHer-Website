@@ -1,13 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router";
-import {
-  BadgeCheck,
-  ChevronRight,
-  Heart,
-  PackageX,
-  ShoppingBag,
-} from "lucide-react";
+import { ChevronRight, Heart, PackageX, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Accordion } from "@/components/bits/Accordion";
 import { EmptyState } from "@/components/bits/EmptyState";
@@ -27,7 +21,7 @@ import {
 } from "@/features/wishlist/wishlistSlice";
 import { galleryOf } from "@/utils/media";
 import type { ProductVariant } from "@/interfaces/catalog";
-import { CATALOG, REVIEWS } from "@/utils/mockData";
+import { CATALOG } from "@/utils/mockData";
 
 const ALL_PRODUCTS = CATALOG;
 
@@ -146,17 +140,15 @@ export default function ProductDetail() {
               {product.title}
             </h1>
 
+            {/* Plain text, not a link — there's no reviews section to jump to. */}
             {product.rating && (
-              <a
-                href="#reviews"
-                className="mt-2 inline-flex items-center gap-2 text-sm text-stone-600"
-              >
+              <p className="mt-2 inline-flex items-center gap-2 text-sm text-stone-600">
                 <StarRating rating={product.rating} />
                 <span className="font-medium">{product.rating}</span>
                 <span className="text-stone-400">
-                  ({product.reviewCount} reviews)
+                  ({product.reviewCount} ratings)
                 </span>
-              </a>
+              </p>
             )}
 
             <PriceTag
@@ -318,46 +310,6 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
-
-      {/* ── Reviews ────────────────────────────────────────────────── */}
-      <section id="reviews" className="bg-cream-100/60 scroll-mt-28 py-12">
-        <SectionHeading
-          title="Reviews"
-          subtitle={
-            product.rating
-              ? `${product.rating} out of 5 · ${product.reviewCount} reviews`
-              : undefined
-          }
-        />
-        <ul className="mx-auto grid max-w-7xl gap-4 px-4 sm:px-6 md:grid-cols-2 lg:px-10">
-          {REVIEWS.map((review) => (
-            <li key={review.id} className="rounded-2xl bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2">
-                <StarRating rating={review.rating} />
-                <p className="text-sm font-semibold text-stone-800">
-                  {review.title}
-                </p>
-              </div>
-              <p className="mt-2 text-sm leading-relaxed text-stone-600">
-                {review.body}
-              </p>
-              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-400">
-                <span className="font-medium text-stone-600">
-                  {review.author}
-                </span>
-                {review.verified && (
-                  <span className="inline-flex items-center gap-1 text-green-700">
-                    <BadgeCheck className="h-3.5 w-3.5" />
-                    Verified buyer
-                  </span>
-                )}
-                {review.size && <span>Size {review.size}</span>}
-                <span>{review.date}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
 
       {/* ── Similar ────────────────────────────────────────────────── */}
       <section className="py-12">

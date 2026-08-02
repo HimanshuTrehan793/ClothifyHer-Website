@@ -4,7 +4,6 @@ import { useLocation } from "react-router";
 import { CategoryStories } from "@/components/common/CategoryStories";
 import { FeaturedCollection } from "@/components/common/FeaturedCollection";
 import { HeroCarousel } from "@/components/common/HeroCarousel";
-import { Newsletter } from "@/components/common/Newsletter";
 import { OccasionGrid } from "@/components/common/OccasionGrid";
 import { SiteFooter } from "@/components/common/SiteFooter";
 import { Testimonials } from "@/components/common/Testimonials";
@@ -96,7 +95,6 @@ export default function Home() {
       />
       <OccasionGrid occasions={OCCASIONS} />
       <Testimonials items={TESTIMONIALS} />
-      <Newsletter />
       <SiteFooter />
     </>
   );
