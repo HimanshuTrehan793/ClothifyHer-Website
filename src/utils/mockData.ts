@@ -1,3 +1,4 @@
+import { SIZE_SCALE } from "@/utils/constants";
 import type { CartLine, Coupon, WishlistEntry } from "@/interfaces/cart";
 import type {
   CategoryStory,
@@ -162,7 +163,7 @@ export const TRENDING_PRODUCTS: Product[] = [
     category: "kurtas",
     brand: "ClothifyHer",
     title: "Hand Block Printed Cotton Kurta",
-    sizes: ["XS", "S", "M", "L", "XL"],
+    sizes: SIZE_SCALE,
     image: img("ch-p1", 700, 1000),
     price: 1499,
     mrp: 2299,
@@ -188,7 +189,7 @@ export const TRENDING_PRODUCTS: Product[] = [
     category: "dresses",
     brand: "ClothifyHer",
     title: "Floral Midi Dress with Tie Waist",
-    sizes: ["XS", "S", "M", "L", "XL"],
+    sizes: SIZE_SCALE,
     image: img("ch-p2", 700, 1000),
     price: 1899,
     mrp: 2799,
@@ -213,7 +214,7 @@ export const TRENDING_PRODUCTS: Product[] = [
     category: "co-ord-sets",
     brand: "ClothifyHer",
     title: "Ivory Co-ord Set in Textured Cotton",
-    sizes: ["XS", "S", "M", "L", "XL"],
+    sizes: SIZE_SCALE,
     image: img("ch-p3", 700, 1000),
     price: 2499,
     mrp: 3499,
@@ -239,7 +240,7 @@ export const TRENDING_PRODUCTS: Product[] = [
     category: "tops",
     brand: "ClothifyHer",
     title: "Relaxed Linen Blend Top",
-    sizes: ["XS", "S", "M", "L", "XL"],
+    sizes: SIZE_SCALE,
     image: img("ch-p4", 700, 1000),
     price: 999,
     mrp: 1399,
@@ -263,7 +264,7 @@ export const TRENDING_PRODUCTS: Product[] = [
     category: "bottom-wear",
     brand: "ClothifyHer",
     title: "High-Rise Straight Fit Palazzo",
-    sizes: ["XS", "S", "M", "L", "XL"],
+    sizes: SIZE_SCALE,
     image: img("ch-p5", 700, 1000),
     price: 1199,
     media: gallery("ch-p5", 3, false),
@@ -287,7 +288,7 @@ export const TRENDING_PRODUCTS: Product[] = [
     category: "kurtas",
     brand: "ClothifyHer",
     title: "Anarkali Kurta with Chikankari Detail",
-    sizes: ["XS", "S", "M", "L", "XL"],
+    sizes: SIZE_SCALE,
     image: img("ch-p6", 700, 1000),
     price: 2799,
     mrp: 3999,
@@ -313,7 +314,7 @@ export const TRENDING_PRODUCTS: Product[] = [
     category: "tops",
     brand: "ClothifyHer",
     title: "Puff Sleeve Cotton Blouse",
-    sizes: ["XS", "S", "M", "L", "XL"],
+    sizes: SIZE_SCALE,
     image: img("ch-p7", 700, 1000),
     price: 1099,
     mrp: 1599,
@@ -338,7 +339,7 @@ export const TRENDING_PRODUCTS: Product[] = [
     category: "bottom-wear",
     brand: "ClothifyHer",
     title: "Wide Leg Trousers in Sage",
-    sizes: ["XS", "S", "M", "L", "XL"],
+    sizes: SIZE_SCALE,
     image: img("ch-p8", 700, 1000),
     price: 1349,
     mrp: 1899,
@@ -374,7 +375,7 @@ export const FEATURED_COLLECTION: FeaturedCollectionData = {
       category: "dresses",
       brand: "ClothifyHer",
       title: "Sleeveless Cotton Shift Dress",
-      sizes: ["XS", "S", "M", "L", "XL"],
+      sizes: SIZE_SCALE,
       image: img("ch-f1", 700, 1000),
       price: 1699,
       mrp: 2399,
@@ -385,7 +386,7 @@ export const FEATURED_COLLECTION: FeaturedCollectionData = {
       category: "co-ord-sets",
       brand: "ClothifyHer",
       title: "Striped Linen Co-ord Set",
-      sizes: ["XS", "S", "M", "L", "XL"],
+      sizes: SIZE_SCALE,
       image: img("ch-f2", 700, 1000),
       price: 2299,
       mrp: 3199,
@@ -397,7 +398,7 @@ export const FEATURED_COLLECTION: FeaturedCollectionData = {
       category: "kurtas",
       brand: "ClothifyHer",
       title: "Mul Cotton Straight Kurta",
-      sizes: ["XS", "S", "M", "L", "XL"],
+      sizes: SIZE_SCALE,
       image: img("ch-f3", 700, 1000),
       price: 1249,
       mrp: 1799,
@@ -594,6 +595,43 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
   },
 };
 
+/**
+ * Pseudo-categories: collections drawn from the whole catalog by a rule rather
+ * than a `category` slug. `sale` was the first of these; trending, best-sellers
+ * and new-arrivals follow the same shape so the listing page can serve them all
+ * from /categories/:slug without knowing which is which.
+ */
+export const COLLECTION_META: Record<string, CategoryMeta> = {
+  trending: {
+    slug: "trending",
+    name: "Trending Now",
+    tagline: "What everyone's adding to their bag this week",
+  },
+  "best-sellers": {
+    slug: "best-sellers",
+    name: "Best Sellers",
+    tagline: "The styles our customers keep coming back for",
+  },
+  "new-arrivals": {
+    slug: "new-arrivals",
+    name: "New Arrivals",
+    tagline: "Fresh silhouettes and new-season favourites",
+  },
+};
+
+/**
+ * Membership rule for each pseudo-category, keyed by slug. A listing page for
+ * one of these filters the whole CATALOG by its predicate instead of matching
+ * on `category`. `sale` lives here too so the special-case is gone from the
+ * listing page. Once the catalog API lands these become server-side queries.
+ */
+export const COLLECTION_FILTERS: Record<string, (p: Product) => boolean> = {
+  sale: (p) => Boolean(p.mrp && p.mrp > p.price),
+  trending: (p) => (p.reviewCount ?? 0) >= 100,
+  "best-sellers": (p) => p.badge === "Bestseller" || (p.rating ?? 0) >= 4.6,
+  "new-arrivals": (p) => p.badge === "New",
+};
+
 /** Subcategory per generated product — keeps mk() call sites unchanged. */
 const SUB_BY_ID: Record<string, string> = {
   k1: "straight",
@@ -638,7 +676,7 @@ const mk = (
   subCategory: SUB_BY_ID[id],
   brand: "ClothifyHer",
   title,
-  sizes: opts.sizes ?? ["XS", "S", "M", "L", "XL"],
+  sizes: opts.sizes ?? SIZE_SCALE,
   image: img(`ch-${id}`, 700, 1000),
   media: gallery(`ch-${id}`, 3, opts.video ?? false),
   price,

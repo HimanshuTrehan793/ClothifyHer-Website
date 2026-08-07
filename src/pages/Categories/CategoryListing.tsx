@@ -23,7 +23,6 @@ import {
 import {
   applyFilters,
   applySort,
-  coloursIn,
   countActive,
   type Filters,
   type SortKey,
@@ -32,6 +31,8 @@ import { SubCategoryRail } from "@/components/common/SubCategoryRail";
 import {
   CATALOG,
   CATEGORY_META,
+  COLLECTION_FILTERS,
+  COLLECTION_META,
   SUBCATEGORIES,
   subCategoryLabel,
 } from "@/utils/mockData";
@@ -48,17 +49,17 @@ export default function CategoryListing() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const meta = CATEGORY_META[categorySlug];
+  const meta = CATEGORY_META[categorySlug] ?? COLLECTION_META[categorySlug];
 
-  /* Everything in this category, before facets. `sale` is a pseudo-category:
-     anything currently marked down, regardless of what it is. */
-  const inCategory = useMemo(
-    () =>
-      categorySlug === "sale"
-        ? CATALOG.filter((p) => p.mrp && p.mrp > p.price)
-        : CATALOG.filter((p) => p.category === categorySlug),
-    [categorySlug],
-  );
+  /* Everything in this listing, before facets. Collections (sale, trending,
+     best-sellers, new-arrivals) are pseudo-categories: they draw from the whole
+     catalog by a rule rather than matching on `category`. */
+  const inCategory = useMemo(() => {
+    const collectionFilter = COLLECTION_FILTERS[categorySlug];
+    return collectionFilter
+      ? CATALOG.filter(collectionFilter)
+      : CATALOG.filter((p) => p.category === categorySlug);
+  }, [categorySlug]);
 
   /* Filters and sort live in the URL so a filtered listing is shareable and
      the back button steps through refinements. */
@@ -66,8 +67,6 @@ export default function CategoryListing() {
     () => ({
       sizes: searchParams.get("size")?.split(",").filter(Boolean) ?? [],
       prices: searchParams.get("price")?.split(",").filter(Boolean) ?? [],
-      colors: searchParams.get("colour")?.split(",").filter(Boolean) ?? [],
-      inStockOnly: searchParams.get("stock") === "1",
     }),
     [searchParams],
   );
@@ -102,7 +101,6 @@ export default function CategoryListing() {
     [inScope, filters, sort],
   );
 
-  const colours = useMemo(() => coloursIn(inScope), [inScope]);
   const availableSizes = useMemo(
     () => [...new Set(inScope.flatMap((p) => p.sizes))],
     [inScope],
@@ -145,8 +143,6 @@ export default function CategoryListing() {
   const PARAM_OF: Record<keyof Filters, string> = {
     sizes: "size",
     prices: "price",
-    colors: "colour",
-    inStockOnly: "stock",
   };
 
   /* Every facet change drops `page` — refining filters must restart the
@@ -166,13 +162,6 @@ export default function CategoryListing() {
     const params = new URLSearchParams(searchParams);
     if (next.length) params.set(key, next.join(","));
     else params.delete(key);
-    commit(params);
-  };
-
-  const setStock = (value: boolean) => {
-    const params = new URLSearchParams(searchParams);
-    if (value) params.set("stock", "1");
-    else params.delete("stock");
     commit(params);
   };
 
@@ -216,11 +205,6 @@ export default function CategoryListing() {
     })),
     ...filters.prices.map((v) => ({
       facet: "prices" as const,
-      value: v,
-      label: v,
-    })),
-    ...filters.colors.map((v) => ({
-      facet: "colors" as const,
       value: v,
       label: v,
     })),
@@ -326,16 +310,6 @@ export default function CategoryListing() {
                 <X className="h-3 w-3" />
               </button>
             ))}
-            {filters.inStockOnly && (
-              <button
-                type="button"
-                onClick={() => setStock(false)}
-                className="bg-maroon-50 text-maroon-800 hover:bg-maroon-100 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
-              >
-                In stock only
-                <X className="h-3 w-3" />
-              </button>
-            )}
             <button
               type="button"
               onClick={clearFilters}
@@ -352,10 +326,8 @@ export default function CategoryListing() {
             <div className="sticky top-28">
               <FilterPanel
                 filters={filters}
-                colours={colours}
                 availableSizes={availableSizes}
                 onToggle={toggleFacet}
-                onInStockChange={setStock}
                 sort={sort}
                 onSortChange={setSort}
               />
@@ -484,10 +456,8 @@ export default function CategoryListing() {
 
             <FilterPanel
               filters={filters}
-              colours={colours}
               availableSizes={availableSizes}
               onToggle={toggleFacet}
-              onInStockChange={setStock}
               sort={sort}
               onSortChange={setSort}
             />

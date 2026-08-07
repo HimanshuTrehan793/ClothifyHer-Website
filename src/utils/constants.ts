@@ -11,6 +11,27 @@ export const ADDRESSES_STORAGE_KEY = "clothifyher.addresses";
 export const CURRENCY_SYMBOL = "₹";
 export const DEFAULT_PAGE_SIZE = 20;
 
+/* ── Sizing ────────────────────────────────────────────────────────────
+   The full size ladder the store offers, XS through 10XL (XXL = 2XL). One
+   source of truth: the size filter, the product size picker's defaults and
+   the size guide all derive from this order. */
+export const SIZE_SCALE = [
+  "XS",
+  "S",
+  "M",
+  "L",
+  "XL",
+  "XXL",
+  "3XL",
+  "4XL",
+  "5XL",
+  "6XL",
+  "7XL",
+  "8XL",
+  "9XL",
+  "10XL",
+];
+
 /* ── Commerce rules — mirror these in the backend once it exists ───── */
 export const FREE_DELIVERY_ABOVE = 1499;
 export const DELIVERY_FEE = 99;

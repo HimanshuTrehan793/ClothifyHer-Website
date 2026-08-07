@@ -1,14 +1,12 @@
 import type { Product } from "@/interfaces/catalog";
+import { SIZE_SCALE } from "@/utils/constants";
 
-export type SortKey =
-  "featured" | "price-asc" | "price-desc" | "discount" | "rating";
+export type SortKey = "featured" | "price-asc" | "price-desc";
 
 export const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "featured", label: "Featured" },
   { value: "price-asc", label: "Price: Low to High" },
   { value: "price-desc", label: "Price: High to Low" },
-  { value: "discount", label: "Biggest Discount" },
-  { value: "rating", label: "Customer Rating" },
 ];
 
 export const PRICE_BUCKETS = [
@@ -18,31 +16,20 @@ export const PRICE_BUCKETS = [
   { id: "3000+", label: "₹3,000 & above", min: 3000, max: Infinity },
 ];
 
-export const SIZE_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL"];
+/** Canonical order the size facet renders in — the full ladder up to 10XL. */
+export const SIZE_OPTIONS = SIZE_SCALE;
 
 export interface Filters {
   sizes: string[];
   prices: string[];
-  colors: string[];
-  inStockOnly: boolean;
 }
 
 export const EMPTY_FILTERS: Filters = {
   sizes: [],
   prices: [],
-  colors: [],
-  inStockOnly: false,
 };
 
-export const countActive = (f: Filters) =>
-  f.sizes.length + f.prices.length + f.colors.length + (f.inStockOnly ? 1 : 0);
-
-const discountOf = (p: Product) =>
-  p.mrp && p.mrp > p.price ? (p.mrp - p.price) / p.mrp : 0;
-
-/** Colours present in a result set — the filter only offers what exists. */
-export const coloursIn = (products: Product[]) =>
-  [...new Set(products.map((p) => p.color).filter(Boolean))].sort() as string[];
+export const countActive = (f: Filters) => f.sizes.length + f.prices.length;
 
 export function applyFilters(products: Product[], f: Filters): Product[] {
   return products.filter((p) => {
@@ -58,10 +45,6 @@ export function applyFilters(products: Product[], f: Filters): Product[] {
       if (!inBucket) return false;
     }
 
-    if (f.colors.length && (!p.color || !f.colors.includes(p.color)))
-      return false;
-    if (f.inStockOnly && p.sizes.length === 0) return false;
-
     return true;
   });
 }
@@ -73,10 +56,6 @@ export function applySort(products: Product[], sort: SortKey): Product[] {
       return out.sort((a, b) => a.price - b.price);
     case "price-desc":
       return out.sort((a, b) => b.price - a.price);
-    case "discount":
-      return out.sort((a, b) => discountOf(b) - discountOf(a));
-    case "rating":
-      return out.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
     default:
       return out; // "featured" keeps the merchandised order
   }

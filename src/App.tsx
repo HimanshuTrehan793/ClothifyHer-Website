@@ -1,11 +1,13 @@
 import { BrowserRouter, Routes, Route } from "react-router";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { LoginDialog } from "@/components/dialog/LoginDialog";
 import { ErrorBoundary } from "@/components/error/ErrorBoundary";
 import Home from "@/pages/Home/Home";
 import Cart from "@/pages/Cart/Cart";
 import Wishlist from "@/pages/Wishlist/Wishlist";
 import ProductDetail from "@/pages/ProductDetail/ProductDetail";
+import AllCategories from "@/pages/Categories/AllCategories";
 import CategoryListing from "@/pages/Categories/CategoryListing";
 import Search from "@/pages/Search/Search";
 import Profile from "@/pages/Profile/Profile";
@@ -15,11 +17,13 @@ import OrderDetail from "@/pages/Orders/OrderDetail/OrderDetail";
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <MainLayout>
         {/* Inside the layout so a page error keeps the header and nav usable. */}
         <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/categories" element={<AllCategories />} />
             <Route
               path="/categories/:categorySlug"
               element={<CategoryListing />}

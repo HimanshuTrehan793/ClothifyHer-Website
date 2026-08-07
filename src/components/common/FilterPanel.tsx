@@ -9,10 +9,8 @@ import {
 
 interface FilterPanelProps {
   filters: Filters;
-  colours: string[];
   availableSizes: string[];
   onToggle: (facet: keyof Filters, value: string) => void;
-  onInStockChange: (value: boolean) => void;
   /** Sort lives here rather than in the toolbar — it's a refinement too. */
   sort: SortKey;
   onSortChange: (value: SortKey) => void;
@@ -20,10 +18,8 @@ interface FilterPanelProps {
 
 export function FilterPanel({
   filters,
-  colours,
   availableSizes,
   onToggle,
-  onInStockChange,
   sort,
   onSortChange,
 }: FilterPanelProps) {
@@ -83,30 +79,6 @@ export function FilterPanel({
             </li>
           ))}
         </ul>
-      </Facet>
-
-      {colours.length > 1 && (
-        <Facet title="Colour">
-          <ul className="space-y-2.5">
-            {colours.map((colour) => (
-              <li key={colour}>
-                <Check
-                  label={colour}
-                  checked={filters.colors.includes(colour)}
-                  onChange={() => onToggle("colors", colour)}
-                />
-              </li>
-            ))}
-          </ul>
-        </Facet>
-      )}
-
-      <Facet title="Availability">
-        <Check
-          label="In stock only"
-          checked={filters.inStockOnly}
-          onChange={() => onInStockChange(!filters.inStockOnly)}
-        />
       </Facet>
     </div>
   );

@@ -7,6 +7,14 @@ const ROWS = [
   { size: "L", bust: 38, waist: 32, hip: 41 },
   { size: "XL", bust: 40, waist: 34, hip: 43 },
   { size: "XXL", bust: 42, waist: 36, hip: 45 },
+  { size: "3XL", bust: 44, waist: 38, hip: 47 },
+  { size: "4XL", bust: 46, waist: 40, hip: 49 },
+  { size: "5XL", bust: 48, waist: 42, hip: 51 },
+  { size: "6XL", bust: 50, waist: 44, hip: 53 },
+  { size: "7XL", bust: 52, waist: 46, hip: 55 },
+  { size: "8XL", bust: 54, waist: 48, hip: 57 },
+  { size: "9XL", bust: 56, waist: 50, hip: 59 },
+  { size: "10XL", bust: 58, waist: 52, hip: 61 },
 ];
 
 export function SizeGuideDialog({

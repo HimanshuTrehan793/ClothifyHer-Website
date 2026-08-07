@@ -59,7 +59,10 @@ export default function Home() {
         />
       </Helmet>
 
-      <CategoryStories stories={CATEGORY_STORIES} />
+      <CategoryStories
+        stories={CATEGORY_STORIES}
+        action={{ label: "Explore All", href: "/categories" }}
+      />
       <HeroCarousel slides={HERO_SLIDES} />
       <TrustStrip />
       <FeaturedCollection
@@ -68,6 +71,7 @@ export default function Home() {
         onToggleWishlist={toggle}
       />
       <TrendingNow
+        action={{ label: "Explore All", href: "/categories/trending" }}
         products={TRENDING_PRODUCTS}
         wishlisted={wishlistIds}
         onToggleWishlist={toggle}
@@ -76,6 +80,7 @@ export default function Home() {
         id="new-arrivals"
         title="New Arrivals"
         subtitle="Fresh silhouettes and new-season favourites"
+        action={{ label: "Explore All", href: "/categories/new-arrivals" }}
         products={TRENDING_PRODUCTS.slice(2, 6)}
         wishlisted={wishlistIds}
         onToggleWishlist={toggle}
@@ -84,6 +89,7 @@ export default function Home() {
         id="best-sellers"
         title="Best Sellers"
         subtitle="The styles our customers keep coming back for"
+        action={{ label: "Explore All", href: "/categories/best-sellers" }}
         products={[
           TRENDING_PRODUCTS[0],
           TRENDING_PRODUCTS[5],
