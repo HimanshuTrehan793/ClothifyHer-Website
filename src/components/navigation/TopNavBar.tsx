@@ -13,13 +13,13 @@ import { cn } from "@/lib/utils";
 import { Logo } from "@/components/bits/Logo";
 import { PRIMARY_NAV, type PrimaryNavItem } from "@/config/navigation";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
-import { selectCartCount } from "@/features/cart/cartSlice";
+import { useCart } from "@/features/cart/useCart";
 import { useWishlist } from "@/features/wishlist/useWishlist";
 import { openLogin, selectIsAuthenticated } from "@/features/auth/authSlice";
 
 export function TopNavBar() {
   const dispatch = useAppDispatch();
-  const bagCount = useAppSelector(selectCartCount);
+  const { count: bagCount } = useCart();
   const { count: wishCount } = useWishlist();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const { pathname } = useLocation();

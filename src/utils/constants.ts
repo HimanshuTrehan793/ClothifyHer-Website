@@ -42,5 +42,5 @@ export const MAX_QTY_PER_LINE = 5;
 export const OTP_LENGTH = 6;
 export const OTP_RESEND_SECONDS = 30;
 export const OTP_MAX_ATTEMPTS = 3;
-/** Mock-only: the code the fake backend accepts. */
-export const MOCK_OTP = "123456";
+/** Mirrors the backend's `DEV_OTP_CODE`; only shown on a dev build. */
+export const DEV_OTP = "123456";

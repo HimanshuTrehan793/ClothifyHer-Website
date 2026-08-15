@@ -7,8 +7,8 @@ import {
 } from "@/features/wishlist/wishlistSlice";
 import { useMergeWishlistMutation } from "@/features/wishlist/wishlistApi";
 
-/** Real catalog ids are UUIDs; mock/demo rows (e.g. "p2") never persist server
-    side, so they're dropped before merge or the whole batch 400s. */
+/** Catalog ids are UUIDs. Anything else in a guest wishlist is stale local
+    data the server won't recognise, so it's dropped or the batch 400s. */
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

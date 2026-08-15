@@ -9,9 +9,24 @@ import { SiteFooter } from "@/components/common/SiteFooter";
 import { BackButton } from "@/components/bits/BackButton";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { openLogin, selectIsAuthenticated } from "@/features/auth/authSlice";
-import { formatPrice } from "@/utils/format";
-import { ORDERS } from "@/utils/mockOrders";
+import { formatDate, formatPrice } from "@/utils/format";
+import { useGetOrdersQuery } from "@/features/orders/orderApi";
 import type { OrderStatus } from "@/interfaces/order";
+
+const IN_PROGRESS: OrderStatus[] = [
+  "pending",
+  "accepted",
+  "processing",
+  "packed",
+  "shipped",
+  "out_for_delivery",
+];
+const CLOSED: OrderStatus[] = [
+  "cancelled",
+  "rejected",
+  "returned",
+  "refunded",
+];
 
 const TABS: {
   id: string;
@@ -22,24 +37,30 @@ const TABS: {
   {
     id: "active",
     label: "In Progress",
-    match: (s) =>
-      s === "confirmed" ||
-      s === "packed" ||
-      s === "shipped" ||
-      s === "out-for-delivery",
+    match: (s) => IN_PROGRESS.includes(s),
   },
   { id: "delivered", label: "Delivered", match: (s) => s === "delivered" },
   {
     id: "cancelled",
     label: "Cancelled",
-    match: (s) => s === "cancelled" || s === "returned",
+    match: (s) => CLOSED.includes(s),
   },
 ];
+
+/** One page covers a normal order history; the tabs group several statuses,
+    so filtering happens here rather than through the `?status=` param. */
+const PAGE_SIZE = 50;
 
 export default function Orders() {
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const [tab, setTab] = useState("all");
+
+  const { data, isLoading } = useGetOrdersQuery(
+    { limit: PAGE_SIZE },
+    { skip: !isAuthenticated },
+  );
+  const allOrders = data?.items ?? [];
 
   /* Orders are account data — there is nothing sensible to show a guest. */
   if (!isAuthenticated) {
@@ -79,12 +100,12 @@ export default function Orders() {
   }
 
   const active = TABS.find((t) => t.id === tab) ?? TABS[0];
-  const orders = ORDERS.filter((o) => active.match(o.status));
+  const orders = allOrders.filter((o) => active.match(o.status));
 
   return (
     <>
       <Helmet>
-        <title>{`Your Orders (${ORDERS.length}) — ClothifyHer`}</title>
+        <title>{`Your Orders (${allOrders.length}) — ClothifyHer`}</title>
       </Helmet>
 
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-10">
@@ -101,7 +122,7 @@ export default function Orders() {
           className="hide-scrollbar mt-6 flex gap-2 overflow-x-auto border-b border-stone-200 pb-3"
         >
           {TABS.map((t) => {
-            const count = ORDERS.filter((o) => t.match(o.status)).length;
+            const count = allOrders.filter((o) => t.match(o.status)).length;
             return (
               <button
                 key={t.id}
@@ -122,7 +143,16 @@ export default function Orders() {
           })}
         </div>
 
-        {orders.length === 0 ? (
+        {isLoading ? (
+          <ul className="mt-6 space-y-4" aria-hidden>
+            {Array.from({ length: 3 }, (_, i) => (
+              <li
+                key={i}
+                className="h-32 animate-pulse rounded-2xl bg-stone-200"
+              />
+            ))}
+          </ul>
+        ) : orders.length === 0 ? (
           <EmptyState
             icon={Package}
             title="Nothing here yet"
@@ -144,10 +174,10 @@ export default function Orders() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="text-sm font-semibold text-stone-900">
-                        {order.id}
+                        Order #{order.orderNumber}
                       </p>
                       <p className="mt-0.5 text-xs text-stone-500">
-                        Placed {order.placedAt}
+                        Placed {formatDate(order.placedAt)}
                       </p>
                     </div>
                     <OrderStatusPill status={order.status} />
@@ -158,7 +188,7 @@ export default function Orders() {
                     <div className="flex -space-x-3">
                       {order.items.slice(0, 3).map((item) => (
                         <img
-                          key={item.productId + item.size}
+                          key={item.id}
                           src={item.image}
                           alt=""
                           loading="lazy"
@@ -174,7 +204,7 @@ export default function Orders() {
 
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm text-stone-700">
-                        {order.items[0].title}
+                        {order.items[0]?.title ?? "Order"}
                         {order.items.length > 1 &&
                           ` + ${order.items.length - 1} more`}
                       </p>
@@ -186,16 +216,15 @@ export default function Orders() {
                     <ChevronRight className="h-5 w-5 shrink-0 text-stone-300" />
                   </div>
 
-                  {order.status === "out-for-delivery" &&
+                  {order.status === "out_for_delivery" &&
                     order.expectedDelivery && (
                       <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
-                        Arriving {order.expectedDelivery}
+                        Arriving {formatDate(order.expectedDelivery)}
                       </p>
                     )}
-                  {order.status === "delivered" && (
+                  {order.status === "delivered" && order.deliveredAt && (
                     <p className="mt-3 text-xs text-green-700">
-                      Delivered on{" "}
-                      {order.events.find((e) => e.status === "delivered")?.at}
+                      Delivered on {formatDate(order.deliveredAt)}
                     </p>
                   )}
                 </Link>

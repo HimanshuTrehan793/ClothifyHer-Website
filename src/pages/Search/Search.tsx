@@ -5,24 +5,20 @@ import { Clock, Search as SearchIcon, X } from "lucide-react";
 import { ProductCard } from "@/components/custom/card/ProductCard";
 import { SiteFooter } from "@/components/common/SiteFooter";
 import { BackButton } from "@/components/bits/BackButton";
+import { ProductCardSkeleton } from "@/components/skeletons/ProductCardSkeleton";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
-import { useAppDispatch, useAppSelector } from "@/app/hooks";
-import {
-  selectWishlistIds,
-  toggleWishlist,
-} from "@/features/wishlist/wishlistSlice";
-import { CATALOG } from "@/utils/mockData";
+import { useWishlist } from "@/features/wishlist/useWishlist";
+import { useGetProductsQuery } from "@/features/product/productApi";
 import {
   MIN_QUERY_LENGTH,
+  parseSearchQuery,
   productTypeLabel,
-  searchCatalog,
 } from "@/utils/search";
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const dispatch = useAppDispatch();
-  const wishlistIds = useAppSelector(selectWishlistIds);
+  const { ids: wishlistIds, toggle: toggleWishlist } = useWishlist();
   const { recent, remember, remove, clear } = useRecentSearches();
 
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
@@ -43,10 +39,19 @@ export default function Search() {
     setSearchParams(params, { replace: true });
   }, [debounced, setSearchParams]);
 
-  const results = useMemo(() => searchCatalog(CATALOG, debounced), [debounced]);
-
   const trimmed = debounced.trim();
-  const isSearching = trimmed.length >= MIN_QUERY_LENGTH;
+  const apiQuery = useMemo(() => parseSearchQuery(trimmed), [trimmed]);
+  const isSearching = apiQuery !== null;
+
+  /* The server does the matching. `skip` keeps a half-typed word from firing a
+     request, and the debounce above keeps it to one request per pause. */
+  const { data, isFetching } = useGetProductsQuery(
+    apiQuery ? { ...apiQuery, limit: 40 } : {},
+    { skip: !apiQuery },
+  );
+
+  const results = data?.items ?? [];
+  const total = data?.meta?.totalItems ?? results.length;
 
   return (
     <>
@@ -164,8 +169,19 @@ export default function Search() {
           </>
         )}
 
+        {/* ── Loading ──────────────────────────────────────────────── */}
+        {isSearching && isFetching && results.length === 0 && (
+          <ul className="mt-8 grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 8 }, (_, i) => (
+              <li key={i}>
+                <ProductCardSkeleton />
+              </li>
+            ))}
+          </ul>
+        )}
+
         {/* ── No results ───────────────────────────────────────────── */}
-        {isSearching && results.length === 0 && (
+        {isSearching && !isFetching && results.length === 0 && (
           <div className="py-20 text-center">
             <span className="bg-maroon-50 mx-auto grid h-16 w-16 place-items-center rounded-full">
               <SearchIcon
@@ -186,25 +202,28 @@ export default function Search() {
         {isSearching && results.length > 0 && (
           <section className="mt-8">
             <p aria-live="polite" className="mb-4 text-sm text-stone-600">
-              <span className="font-semibold text-stone-900">
-                {results.length}
-              </span>{" "}
-              {results.length === 1 ? "result" : "results"} for “{trimmed}”
+              <span className="font-semibold text-stone-900">{total}</span>{" "}
+              {total === 1 ? "result" : "results"} for “{trimmed}”
             </p>
 
             <ul className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:grid-cols-4">
-              {results.map((product) => (
-                <li key={product.id}>
-                  <ProductCard
-                    product={product}
-                    wishlisted={wishlistIds.has(product.id)}
-                    onToggleWishlist={() => dispatch(toggleWishlist(product))}
-                  />
-                  <p className="mt-1 text-[11px] text-stone-400">
-                    in {productTypeLabel(product)}
-                  </p>
-                </li>
-              ))}
+              {results.map((product) => {
+                const label = productTypeLabel(product);
+                return (
+                  <li key={product.id}>
+                    <ProductCard
+                      product={product}
+                      wishlisted={wishlistIds.has(product.id)}
+                      onToggleWishlist={() => toggleWishlist(product)}
+                    />
+                    {label && (
+                      <p className="mt-1 text-[11px] text-stone-400">
+                        in {label}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </section>
         )}

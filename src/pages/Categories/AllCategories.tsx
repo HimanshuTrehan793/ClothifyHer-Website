@@ -3,29 +3,22 @@ import { Link } from "react-router";
 import { ArrowUpRight, ChevronRight } from "lucide-react";
 import { SiteFooter } from "@/components/common/SiteFooter";
 import { BackButton } from "@/components/bits/BackButton";
-import {
-  CATALOG,
-  CATEGORY_META,
-  CATEGORY_STORIES,
-  COLLECTION_FILTERS,
-} from "@/utils/mockData";
+import { EmptyState } from "@/components/bits/EmptyState";
+import { useGetCategoriesQuery } from "@/features/category/categoryApi";
 import { SITE_URL } from "@/utils/constants";
-
-/* How many buyable items sit behind a category chip — mirrors the pool the
-   listing page builds, so `sale` counts by its rule rather than a slug. */
-const countFor = (slug: string) => {
-  const collectionFilter = COLLECTION_FILTERS[slug];
-  return collectionFilter
-    ? CATALOG.filter(collectionFilter).length
-    : CATALOG.filter((p) => p.category === slug).length;
-};
 
 /**
  * The categories index (/categories) — the destination for "Explore All" on the
  * home category rail and the Categories tab in the bottom nav. Each card opens
  * that category's product list page.
+ *
+ * Categories come straight from `/api/categories`. The API carries no tagline
+ * or product count per category, so neither is rendered — a count would cost
+ * one extra list request per card.
  */
 export default function AllCategories() {
+  const { data: categories = [], isLoading } = useGetCategoriesQuery();
+
   return (
     <>
       <Helmet>
@@ -62,41 +55,50 @@ export default function AllCategories() {
           <span className="via-gold-400 mt-3 block h-px w-16 bg-gradient-to-r from-transparent to-transparent" />
         </header>
 
-        <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:gap-6">
-          {CATEGORY_STORIES.map((story) => {
-            const tagline = CATEGORY_META[story.id]?.tagline;
-            const count = countFor(story.id);
-
-            return (
-              <li key={story.id}>
+        {isLoading ? (
+          <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:gap-6">
+            {Array.from({ length: 6 }, (_, i) => (
+              <li
+                key={i}
+                className="h-48 animate-pulse rounded-2xl bg-stone-200 sm:h-64"
+                aria-hidden
+              />
+            ))}
+          </ul>
+        ) : categories.length === 0 ? (
+          <EmptyState
+            icon={ArrowUpRight}
+            title="No categories yet"
+            message="Categories will appear here as soon as they're added to the store."
+            action={{ label: "Back to home", href: "/" }}
+          />
+        ) : (
+          <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:gap-6">
+            {categories.map((category) => (
+              <li key={category.id}>
                 <Link
-                  to={story.href}
+                  to={`/categories/${category.slug}`}
                   className="group relative isolate block overflow-hidden rounded-2xl shadow-sm transition-shadow duration-300 hover:shadow-md"
                 >
-                  <img
-                    src={story.image}
-                    alt={story.label}
-                    loading="lazy"
-                    className="h-48 w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 sm:h-64"
-                  />
+                  {category.image ? (
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      loading="lazy"
+                      className="h-48 w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 sm:h-64"
+                    />
+                  ) : (
+                    /* Image is nullable on the API — keep the tile's shape. */
+                    <span className="bg-maroon-100 block h-48 w-full sm:h-64" />
+                  )}
 
                   <span className="img-scrim pointer-events-none absolute inset-0" />
 
                   <span className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 sm:p-5">
                     <span className="min-w-0">
                       <span className="block font-serif text-xl text-white sm:text-2xl">
-                        {story.label}
+                        {category.name}
                       </span>
-                      {tagline && (
-                        <span className="mt-0.5 line-clamp-2 block text-[13px] text-white/80">
-                          {tagline}
-                        </span>
-                      )}
-                      {count > 0 && (
-                        <span className="mt-1 block text-[11px] font-medium tracking-wide text-white/70 uppercase">
-                          {count} {count === 1 ? "style" : "styles"}
-                        </span>
-                      )}
                     </span>
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/15 backdrop-blur-sm transition-colors duration-300 group-hover:bg-white">
                       <ArrowUpRight className="h-4 w-4 text-white transition-colors duration-300 group-hover:text-stone-900" />
@@ -104,9 +106,9 @@ export default function AllCategories() {
                   </span>
                 </Link>
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
+        )}
       </div>
 
       <SiteFooter />

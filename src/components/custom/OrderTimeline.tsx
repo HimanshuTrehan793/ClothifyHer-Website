@@ -1,6 +1,7 @@
 import { Check, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FULFILMENT_STEPS, type Order } from "@/interfaces/order";
+import { formatDateTime } from "@/utils/format";
 
 /**
  * Vertical stepper for doc §15. A cancelled order stops the happy path dead
@@ -10,9 +11,18 @@ export function OrderTimeline({ order }: { order: Order }) {
   const timeOf = (status: string) =>
     order.events.find((e) => e.status === status)?.at;
 
-  if (order.status === "cancelled") {
-    const confirmedAt = timeOf("confirmed");
-    const cancelledAt = timeOf("cancelled");
+  /* A terminal state stops the happy path dead rather than rendering four
+     greyed-out steps that will never happen. The note on the history row is
+     the closest thing to a reason the API records. */
+  const TERMINAL: Record<string, string> = {
+    cancelled: "Cancelled",
+    rejected: "Rejected",
+    returned: "Returned",
+    refunded: "Refunded",
+  };
+
+  if (TERMINAL[order.status]) {
+    const event = order.events.find((e) => e.status === order.status);
 
     return (
       <ol className="space-y-0">
@@ -20,14 +30,14 @@ export function OrderTimeline({ order }: { order: Order }) {
           done
           label="Order Confirmed"
           hint="We've received your order"
-          at={confirmedAt}
+          at={timeOf("accepted") ?? timeOf("pending")}
         />
         <Step
           done
           tone="cancelled"
-          label="Cancelled"
-          hint={order.cancelledReason ?? "This order was cancelled"}
-          at={cancelledAt}
+          label={TERMINAL[order.status]}
+          hint={event?.note ?? `This order was ${order.status}`}
+          at={event?.at}
           last
         />
       </ol>
@@ -121,7 +131,9 @@ function Step({
           )}
         </p>
         <p className="mt-0.5 text-xs text-stone-500">{hint}</p>
-        {at && <p className="mt-1 text-xs text-stone-400">{at}</p>}
+        {at && (
+          <p className="mt-1 text-xs text-stone-400">{formatDateTime(at)}</p>
+        )}
       </div>
     </li>
   );

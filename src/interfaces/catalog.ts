@@ -38,6 +38,25 @@ export interface ProductVariant {
   price?: number;
   mrp?: number;
   sizes?: string[];
+  /**
+   * The priced sellable units behind `sizes`. Only the PDP endpoint returns
+   * these — the slim PLP list omits them — but the cart needs `id` to add a
+   * line, so anything with an add-to-bag button must read from here.
+   */
+  sizeRows?: VariantSize[];
+  /** The whole colourway is unavailable; every size is unbuyable. */
+  outOfStock?: boolean;
+}
+
+/** One priced size of a colourway — the unit the cart and orders key on. */
+export interface VariantSize {
+  id: string;
+  size: string;
+  sku: string;
+  price: number;
+  mrp?: number;
+  /** Per-order cap the cart clamps quantity to. */
+  maxOrderQuantity: number;
 }
 
 /** A catalog category as the app consumes it (normalized from the API). */
@@ -52,7 +71,7 @@ export interface Category {
 
 export interface Product {
   id: string;
-  /** URL slug for routing/PDP lookup (`/products/:slug`). Mock rows omit it. */
+  /** URL slug for routing/PDP lookup (`/products/:slug`). */
   slug?: string;
   brand: string;
   title: string;
@@ -109,7 +128,8 @@ export interface Review {
 
 export interface HeroSlide {
   id: string;
-  eyebrow: string;
+  /** Optional — a banner row carries no eyebrow, so the pill is conditional. */
+  eyebrow?: string;
   title: string;
   subtitle: string;
   image: string;

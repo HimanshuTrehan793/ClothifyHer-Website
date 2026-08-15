@@ -1,20 +1,16 @@
-import { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router";
-import { Check, Heart, ShoppingBag, X } from "lucide-react";
+import { Heart, ShoppingBag, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/bits/EmptyState";
 import { PriceTag } from "@/components/bits/PriceTag";
 import { SiteFooter } from "@/components/common/SiteFooter";
 import { BackButton } from "@/components/bits/BackButton";
-import { useAppDispatch } from "@/app/hooks";
-import { addToCart } from "@/features/cart/cartSlice";
 import { useWishlist } from "@/features/wishlist/useWishlist";
 import type { Product } from "@/interfaces/catalog";
 
 export default function Wishlist() {
-  const dispatch = useAppDispatch();
-  const { entries, remove, isServer } = useWishlist();
+  const { entries, remove } = useWishlist();
 
   if (!entries.length) {
     return (
@@ -54,12 +50,7 @@ export default function Wishlist() {
             <WishlistCard
               key={product.id}
               product={product}
-              isServer={isServer}
               onRemove={() => remove(product.id)}
-              onMoveToCart={(size) => {
-                dispatch(addToCart({ product, size }));
-                remove(product.id);
-              }}
             />
           ))}
         </ul>
@@ -72,22 +63,16 @@ export default function Wishlist() {
 
 function WishlistCard({
   product,
-  isServer,
   onRemove,
-  onMoveToCart,
 }: {
   product: Product;
-  /** Server entries carry no sizes — route those to the PDP to pick one. */
-  isServer: boolean;
   onRemove: () => void;
-  onMoveToCart: (size: string) => void;
 }) {
-  /* Moving to the bag needs a size, and a wishlist entry has never picked one.
-     Rather than bouncing to the PDP, reveal the sizes inline. */
-  const [picking, setPicking] = useState(false);
+  /* Adding to the bag needs the priced size×colour unit, and a wishlist row
+     only ever stores the product — so "Move to Bag" goes to the PDP, where the
+     size picker can resolve a real variant size. */
   const href = `/products/${product.slug ?? product.id}`;
-  // Only the local wishlist knows sizes, so only it can flag a sold-out item.
-  const soldOut = !isServer && product.sizes.length === 0;
+  const soldOut = product.sizes.length === 0;
 
   return (
     <li className="group">
@@ -118,27 +103,6 @@ function WishlistCard({
             Sold out
           </span>
         )}
-
-        {/* Size picker slides up over the image once "Move to Bag" is tapped. */}
-        {!isServer && picking && !soldOut && (
-          <div className="absolute inset-x-0 bottom-0 animate-[fadeIn_200ms_ease-out] bg-white/95 p-3 backdrop-blur-sm">
-            <p className="mb-2 text-[11px] font-semibold tracking-wider text-stone-500 uppercase">
-              Select a size
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {product.sizes.map((size) => (
-                <button
-                  key={size}
-                  type="button"
-                  onClick={() => onMoveToCart(size)}
-                  className="hover:border-maroon-800 hover:bg-maroon-800 min-w-9 rounded-lg border border-stone-300 px-2 py-1.5 text-xs font-medium transition-colors hover:text-white"
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="mt-3 space-y-1">
@@ -153,42 +117,18 @@ function WishlistCard({
         </Link>
         <PriceTag price={product.price} mrp={product.mrp} className="pt-0.5" />
 
-        {isServer ? (
-          // Server entries have no sizes — send them to the PDP to pick one.
-          <Link
-            to={href}
-            className="bg-maroon-800 hover:bg-maroon-900 mt-2 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-full text-xs font-semibold text-white transition-colors"
-          >
-            <ShoppingBag className="h-3.5 w-3.5" />
-            Move to Bag
-          </Link>
-        ) : (
-          <button
-            type="button"
-            disabled={soldOut}
-            onClick={() => setPicking((p) => !p)}
-            className={cn(
-              "mt-2 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-full text-xs font-semibold transition-colors",
-              soldOut
-                ? "cursor-not-allowed bg-stone-100 text-stone-400"
-                : picking
-                  ? "bg-stone-200 text-stone-700"
-                  : "bg-maroon-800 hover:bg-maroon-900 text-white",
-            )}
-          >
-            {picking ? (
-              <>
-                <Check className="h-3.5 w-3.5" />
-                Choose a size above
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="h-3.5 w-3.5" />
-                {soldOut ? "Sold out" : "Move to Bag"}
-              </>
-            )}
-          </button>
-        )}
+        <Link
+          to={href}
+          className={cn(
+            "mt-2 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-full text-xs font-semibold transition-colors",
+            soldOut
+              ? "bg-stone-100 text-stone-400"
+              : "bg-maroon-800 hover:bg-maroon-900 text-white",
+          )}
+        >
+          <ShoppingBag className="h-3.5 w-3.5" />
+          {soldOut ? "View item" : "Move to Bag"}
+        </Link>
       </div>
     </li>
   );

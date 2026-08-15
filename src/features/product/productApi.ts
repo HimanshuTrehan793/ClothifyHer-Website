@@ -88,6 +88,21 @@ const toVariant = (v: ApiVariant, fallbackImage: string): ProductVariant => {
     price: money(cheapest?.price),
     mrp: money(cheapest?.mrp),
     sizes: orderedSizes(sizeRows),
+    /* Keep the priced rows, not just the labels — the cart adds a line by
+       `variant_size_id`, so a size label alone can't be added to the bag. The
+       slim PLP list ships size labels without ids; omit the rows entirely there
+       rather than handing the cart unusable units. */
+    sizeRows: sizeRows.some((s) => s.id)
+      ? sizeRows.map((s) => ({
+          id: s.id,
+          size: s.size,
+          sku: s.sku,
+          price: s.price,
+          mrp: money(s.mrp),
+          maxOrderQuantity: s.max_order_quantity,
+        }))
+      : undefined,
+    outOfStock: v.out_of_stock,
   };
 };
 

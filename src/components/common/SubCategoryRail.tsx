@@ -7,9 +7,13 @@ interface SubCategoryRailProps {
   /** null = "All" is selected. */
   active: string | null;
   onSelect: (slug: string | null) => void;
-  /** Result count per slug, so a chip can show how much sits behind it. */
-  counts: Record<string, number>;
-  totalCount: number;
+  /**
+   * Result count per slug, so a chip can show how much sits behind it. Omit
+   * when the counts aren't known — the chips then render without a number
+   * rather than claiming every sub-category is empty.
+   */
+  counts?: Record<string, number>;
+  totalCount?: number;
 }
 
 /**
@@ -41,7 +45,7 @@ export function SubCategoryRail({
             <Chip
               label={sub.label}
               image={sub.image}
-              count={counts[sub.slug] ?? 0}
+              count={counts?.[sub.slug]}
               active={active === sub.slug}
               onClick={() => onSelect(active === sub.slug ? null : sub.slug)}
             />
@@ -61,7 +65,7 @@ function Chip({
 }: {
   label: string;
   image?: string;
-  count: number;
+  count?: number;
   active: boolean;
   onClick: () => void;
 }) {
@@ -110,14 +114,16 @@ function Chip({
       </span>
 
       <span className="text-sm font-medium whitespace-nowrap">{label}</span>
-      <span
-        className={cn(
-          "text-xs tabular-nums",
-          active ? "text-white/60" : "text-stone-400",
-        )}
-      >
-        {count}
-      </span>
+      {count != null && (
+        <span
+          className={cn(
+            "text-xs tabular-nums",
+            active ? "text-white/60" : "text-stone-400",
+          )}
+        >
+          {count}
+        </span>
+      )}
     </button>
   );
 }

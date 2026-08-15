@@ -1,64 +1,88 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router";
-import { Gift, Heart, ShoppingBag, Tag, Truck, X } from "lucide-react";
+import { AlertTriangle, Heart, ShoppingBag, Tag, Truck, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/bits/EmptyState";
 import { PriceTag } from "@/components/bits/PriceTag";
 import { QuantityStepper } from "@/components/bits/QuantityStepper";
 import { SectionHeading } from "@/components/bits/SectionHeading";
 import { ProductCard } from "@/components/custom/card/ProductCard";
+import { ProductCardSkeleton } from "@/components/skeletons/ProductCardSkeleton";
 import { SiteFooter } from "@/components/common/SiteFooter";
 import { BackButton } from "@/components/bits/BackButton";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
-import {
-  applyCoupon,
-  removeCoupon,
-  removeLine,
-  selectCartLines,
-  selectCartTotals,
-  selectCoupon,
-  selectGiftWrap,
-  setGiftWrap,
-  setQuantity,
-  validateCoupon,
-} from "@/features/cart/cartSlice";
-import {
-  selectWishlistIds,
-  toggleWishlist,
-} from "@/features/wishlist/wishlistSlice";
+import { applyCoupon } from "@/features/cart/cartSlice";
+import { useCart } from "@/features/cart/useCart";
+import { useValidateCouponMutation } from "@/features/coupon/couponApi";
+import { useWishlist } from "@/features/wishlist/useWishlist";
+import { useGetProductsQuery } from "@/features/product/productApi";
 import { openLogin, selectIsAuthenticated } from "@/features/auth/authSlice";
 import { formatPrice } from "@/utils/format";
-import { FREE_DELIVERY_ABOVE, GIFT_WRAP_FEE } from "@/utils/constants";
-import { TRENDING_PRODUCTS } from "@/utils/mockData";
 
 export default function Cart() {
   const dispatch = useAppDispatch();
-  const lines = useAppSelector(selectCartLines);
-  const totals = useAppSelector(selectCartTotals);
-  const coupon = useAppSelector(selectCoupon);
-  const giftWrap = useAppSelector(selectGiftWrap);
-  const wishlistIds = useAppSelector(selectWishlistIds);
+  const {
+    lines,
+    totals,
+    coupon,
+    clearCoupon,
+    setQuantity,
+    remove,
+    isLoading,
+    storeClosed,
+    hasOutOfStock,
+    freeShippingThreshold: freeDeliveryThreshold,
+  } = useCart();
+  const { ids: wishlistIds, toggle: toggleWishlist } = useWishlist();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
 
   const [code, setCode] = useState("");
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [validate, { isLoading: validating }] = useValidateCouponMutation();
 
-  const submitCoupon = () => {
-    const result = validateCoupon(code, totals.itemTotal);
-    if (result.ok) {
+  /* Recommendations come off the live catalog rather than a fixed list. */
+  const { data: suggestions, isLoading: suggestionsLoading } =
+    useGetProductsQuery({ limit: 4 });
+
+  /* The coupon is held client-side but its minimum is enforced against the
+     server's subtotal — drop it the moment the bag falls below that, so the
+     summary can't promise a discount checkout would reject. */
+  useEffect(() => {
+    if (coupon && totals.itemTotal > 0 && totals.itemTotal < coupon.minOrderValue) {
+      clearCoupon();
+      setCouponError(
+        `${coupon.code} needs a minimum of ${formatPrice(coupon.minOrderValue)} — it's been removed.`,
+      );
+    }
+  }, [coupon, totals.itemTotal, clearCoupon]);
+
+  const submitCoupon = async () => {
+    const trimmed = code.trim().toUpperCase();
+    if (!trimmed) {
+      setCouponError("Enter a coupon code.");
+      return;
+    }
+    try {
+      // The server is the authority: it owns the window, the minimum and the cap.
+      const result = await validate({
+        code: trimmed,
+        cart_total: totals.itemTotal,
+      }).unwrap();
       dispatch(applyCoupon(result.coupon));
       setCode("");
       setCouponError(null);
-    } else {
-      setCouponError(result.message);
+    } catch {
+      /* The base query already toasted the server's message ("Coupon has
+         expired", "Add ₹300 more…"); keep the inline slot for the field. */
+      setCouponError("That code couldn't be applied.");
     }
   };
 
   const checkout = () => {
     // Checkout is the one flow that genuinely requires an account.
     if (!isAuthenticated) dispatch(openLogin("checkout"));
-    else console.info("TODO: navigate to /checkout once Phase 2 lands");
+    else console.info("TODO: navigate to /checkout once the screen exists");
   };
 
   // The bag is tied to the account, so a signed-out visitor is gated here —
@@ -93,6 +117,28 @@ export default function Cart() {
           >
             Sign in
           </button>
+        </div>
+        <SiteFooter />
+      </>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <>
+        <Helmet>
+          <title>Your Bag — ClothifyHer</title>
+        </Helmet>
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10">
+          <div className="h-8 w-40 animate-pulse rounded bg-stone-200" />
+          <ul className="mt-6 space-y-4" aria-hidden>
+            {Array.from({ length: 3 }, (_, i) => (
+              <li
+                key={i}
+                className="h-40 animate-pulse rounded-2xl bg-stone-200"
+              />
+            ))}
+          </ul>
         </div>
         <SiteFooter />
       </>
@@ -164,7 +210,11 @@ export default function Cart() {
                 key={line.lineId}
                 className="relative flex gap-4 rounded-2xl bg-white p-3 shadow-sm sm:p-4"
               >
-                <Link to={`/products/${line.productId}`} className="shrink-0">
+                {/* PDP routes on slug, which the cart row carries. */}
+                <Link
+                  to={`/products/${line.productSlug ?? line.productId}`}
+                  className="shrink-0"
+                >
                   <img
                     src={line.image}
                     alt={line.title}
@@ -178,11 +228,20 @@ export default function Cart() {
                     {line.brand}
                   </p>
                   <Link
-                    to={`/products/${line.productId}`}
+                    to={`/products/${line.productSlug ?? line.productId}`}
                     className="hover:text-maroon-800 line-clamp-2 pr-8 text-sm text-stone-800"
                   >
                     {line.title}
                   </Link>
+
+                  {/* The colour can go out of stock after it was added; the
+                      order endpoint refuses to place it, so say so here. */}
+                  {line.outOfStock && (
+                    <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-red-600">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      Out of stock — remove to check out
+                    </p>
+                  )}
 
                   <p className="mt-1.5 text-xs text-stone-500">
                     Size:{" "}
@@ -209,19 +268,27 @@ export default function Cart() {
                     <QuantityStepper
                       quantity={line.quantity}
                       label={line.title}
-                      onChange={(quantity) =>
-                        dispatch(setQuantity({ lineId: line.lineId, quantity }))
-                      }
+                      max={line.maxQuantity}
+                      onChange={(quantity) => setQuantity(line, quantity)}
                     />
 
+                    {/* The cart row carries only a product snapshot, so the
+                        wishlist gets that same snapshot — enough for its card. */}
                     <button
                       type="button"
                       onClick={() => {
-                        const product = [...TRENDING_PRODUCTS].find(
-                          (p) => p.id === line.productId,
-                        );
-                        if (product) dispatch(toggleWishlist(product));
-                        dispatch(removeLine(line.lineId));
+                        toggleWishlist({
+                          id: line.productId,
+                          slug: line.productSlug,
+                          brand: line.brand,
+                          title: line.title,
+                          category: "",
+                          sizes: [],
+                          image: line.image,
+                          price: line.price,
+                          mrp: line.mrp,
+                        });
+                        remove(line);
                       }}
                       className="hover:text-maroon-800 inline-flex items-center gap-1.5 text-xs font-medium text-stone-500"
                     >
@@ -233,7 +300,7 @@ export default function Cart() {
 
                 <button
                   type="button"
-                  onClick={() => dispatch(removeLine(line.lineId))}
+                  onClick={() => remove(line)}
                   aria-label={`Remove ${line.title}`}
                   className="absolute top-3 right-3 grid h-7 w-7 place-items-center rounded-full text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
                 >
@@ -265,7 +332,7 @@ export default function Cart() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => dispatch(removeCoupon())}
+                      onClick={clearCoupon}
                       className="text-xs font-medium text-green-800 underline"
                     >
                       Remove
@@ -292,9 +359,10 @@ export default function Cart() {
                       <button
                         type="button"
                         onClick={submitCoupon}
-                        className="border-maroon-800 text-maroon-800 hover:bg-maroon-800 h-11 rounded-full border px-5 text-sm font-semibold transition-colors hover:text-white"
+                        disabled={validating}
+                        className="border-maroon-800 text-maroon-800 hover:bg-maroon-800 h-11 rounded-full border px-5 text-sm font-semibold transition-colors hover:text-white disabled:opacity-50"
                       >
-                        Apply
+                        {validating ? "Checking…" : "Apply"}
                       </button>
                     </div>
                     <p
@@ -303,29 +371,9 @@ export default function Cart() {
                     >
                       {couponError}
                     </p>
-                    <p className="text-xs text-stone-400">
-                      Try WELCOME10, FLAT300 or FESTIVE20
-                    </p>
                   </>
                 )}
               </div>
-
-              {/* Gift wrap */}
-              <label className="flex cursor-pointer items-center gap-3 rounded-2xl bg-white p-4 shadow-sm">
-                <input
-                  type="checkbox"
-                  checked={giftWrap}
-                  onChange={(e) => dispatch(setGiftWrap(e.target.checked))}
-                  className="accent-maroon-800 h-4 w-4"
-                />
-                <Gift className="text-maroon-700 h-4 w-4" />
-                <span className="flex-1 text-sm text-stone-700">
-                  Add gift wrap
-                </span>
-                <span className="text-sm font-medium text-stone-600">
-                  {formatPrice(GIFT_WRAP_FEE)}
-                </span>
-              </label>
 
               {/* Totals */}
               <div className="rounded-2xl bg-white p-4 shadow-sm">
@@ -352,12 +400,6 @@ export default function Cart() {
                       positive
                     />
                   )}
-                  {totals.giftWrapFee > 0 && (
-                    <Row
-                      label="Gift wrap"
-                      value={formatPrice(totals.giftWrapFee)}
-                    />
-                  )}
                   <Row
                     label="Delivery"
                     value={
@@ -374,19 +416,35 @@ export default function Cart() {
                   </div>
                 </dl>
 
+                {/* `store_active` gates every order server-side — don't offer
+                    a checkout the API is going to refuse. */}
+                {storeClosed && (
+                  <p className="mt-4 rounded-xl bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+                    The store is temporarily closed and isn't accepting orders
+                    right now.
+                  </p>
+                )}
+
                 <button
                   type="button"
                   onClick={checkout}
-                  className="bg-maroon-800 hover:bg-maroon-900 mt-5 h-12 w-full rounded-full text-sm font-semibold text-white transition-all duration-300 hover:scale-[1.02]"
+                  disabled={storeClosed || hasOutOfStock}
+                  className="bg-maroon-800 hover:bg-maroon-900 mt-5 h-12 w-full rounded-full text-sm font-semibold text-white transition-all duration-300 hover:scale-[1.02] disabled:pointer-events-none disabled:opacity-50"
                 >
                   {isAuthenticated
                     ? "Proceed to Checkout"
                     : "Sign in to Checkout"}
                 </button>
 
+                {hasOutOfStock && (
+                  <p className="mt-3 text-center text-[11px] text-red-600">
+                    Remove the out-of-stock items to continue.
+                  </p>
+                )}
+
                 <p className="mt-3 text-center text-[11px] text-stone-400">
                   Free delivery on orders above{" "}
-                  {formatPrice(FREE_DELIVERY_ABOVE)}
+                  {formatPrice(freeDeliveryThreshold)}
                 </p>
               </div>
             </div>
@@ -395,22 +453,28 @@ export default function Cart() {
       </div>
 
       {/* Recommendations — doc §11 */}
-      <section className="bg-cream-100/60 py-12">
-        <SectionHeading
-          title="You May Also Like"
-          action={{ label: "View all", href: "/new-arrivals" }}
-        />
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-4 gap-y-8 px-4 sm:px-6 md:grid-cols-4 lg:px-10">
-          {TRENDING_PRODUCTS.slice(0, 4).map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              wishlisted={wishlistIds.has(product.id)}
-              onToggleWishlist={() => dispatch(toggleWishlist(product))}
-            />
-          ))}
-        </div>
-      </section>
+      {(suggestionsLoading || (suggestions?.items.length ?? 0) > 0) && (
+        <section className="bg-cream-100/60 py-12">
+          <SectionHeading
+            title="You May Also Like"
+            action={{ label: "View all", href: "/categories" }}
+          />
+          <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-4 gap-y-8 px-4 sm:px-6 md:grid-cols-4 lg:px-10">
+            {suggestionsLoading
+              ? Array.from({ length: 4 }, (_, i) => (
+                  <ProductCardSkeleton key={i} />
+                ))
+              : suggestions?.items.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    wishlisted={wishlistIds.has(product.id)}
+                    onToggleWishlist={() => toggleWishlist(product)}
+                  />
+                ))}
+          </div>
+        </section>
+      )}
 
       <SiteFooter />
     </>

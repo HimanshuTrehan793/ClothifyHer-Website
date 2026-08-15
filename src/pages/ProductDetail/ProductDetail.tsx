@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { skipToken } from "@reduxjs/toolkit/query/react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router";
@@ -15,31 +15,37 @@ import { ProductCard } from "@/components/custom/card/ProductCard";
 import { SiteFooter } from "@/components/common/SiteFooter";
 import { SizeGuideDialog } from "@/components/dialog/SizeGuideDialog";
 import { BackButton } from "@/components/bits/BackButton";
-import { useAppDispatch } from "@/app/hooks";
-import { addToCart } from "@/features/cart/cartSlice";
+import { useCart } from "@/features/cart/useCart";
 import { useWishlist } from "@/features/wishlist/useWishlist";
 import { galleryOf } from "@/utils/media";
 import type { ProductVariant } from "@/interfaces/catalog";
-import { useGetProductBySlugQuery } from "@/features/product/productApi";
-import { CATALOG } from "@/utils/mockData";
+import {
+  useGetProductBySlugQuery,
+  useGetProductsQuery,
+} from "@/features/product/productApi";
+import { useGetConfigurationQuery } from "@/features/configuration/configurationApi";
+import { formatPrice } from "@/utils/format";
 
 export default function ProductDetail() {
   const { productId: param = "" } = useParams();
-  const dispatch = useAppDispatch();
   const { ids: wishlistIds, toggle: toggleWishlist } = useWishlist();
+  const { add, isAdding } = useCart();
 
-  /* Mock rows are keyed by id ("p1"); real products resolve by slug via the
-     API. Prefer a mock match so we don't fire a doomed request for seed data
-     that hasn't been migrated yet. */
-  const mockProduct = useMemo(
-    () => CATALOG.find((p) => p.id === param),
-    [param],
+  /* Products resolve by slug — `/products/:slug` is the canonical PDP route. */
+  const { data: product, isLoading: loading } = useGetProductBySlugQuery(
+    param ? param : skipToken,
   );
-  const { data: apiProduct, isLoading } = useGetProductBySlugQuery(
-    mockProduct || !param ? skipToken : param,
+
+  /* "You may also like" = more from the same category. Waits for the product,
+     since its category slug is the filter. */
+  const { data: related } = useGetProductsQuery(
+    product?.category ? { category: product.category, limit: 5 } : skipToken,
   );
-  const product = mockProduct ?? apiProduct;
-  const loading = !mockProduct && isLoading;
+  const similar = (related?.items ?? [])
+    .filter((p) => p.id !== product?.id)
+    .slice(0, 4);
+
+  const { data: config } = useGetConfigurationQuery();
 
   const [variantId, setVariantId] = useState<string | null>(null);
   const [size, setSize] = useState<string | null>(null);
@@ -93,9 +99,9 @@ export default function ProductDetail() {
   const price = variant?.price ?? product.price;
   const mrp = variant?.mrp ?? product.mrp;
   const sizes = variant?.sizes ?? product.sizes;
-  const soldOut = sizes.length === 0;
+  // A colour flagged out of stock has no buyable size, whatever its rows say.
+  const soldOut = sizes.length === 0 || variant?.outOfStock === true;
   const wishlisted = wishlistIds.has(product.id);
-  const similar = CATALOG.filter((p) => p.id !== product.id).slice(0, 4);
 
   const handleAddToCart = () => {
     // The single biggest conversion leak on mobile is a silent no-op here.
@@ -106,7 +112,14 @@ export default function ProductDetail() {
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    dispatch(addToCart({ product, size, variant }));
+    /* The cart keys on the priced size×colour unit, not on a size label —
+       resolve the chosen size back to its VariantSize row. */
+    const row = variant?.sizeRows?.find((s) => s.size === size);
+    if (!row) {
+      setSizeError(true);
+      return;
+    }
+    add(row.id);
     setAdded(true);
   };
 
@@ -250,7 +263,7 @@ export default function ProductDetail() {
               <button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={soldOut}
+                disabled={soldOut || isAdding}
                 className={cn(
                   "inline-flex h-13 flex-1 items-center justify-center gap-2 rounded-full text-sm font-semibold transition-all duration-300",
                   soldOut
@@ -261,7 +274,13 @@ export default function ProductDetail() {
                 )}
               >
                 <ShoppingBag className="h-4 w-4" />
-                {soldOut ? "Sold Out" : added ? "Added to Bag" : "Add to Bag"}
+                {soldOut
+                  ? "Sold Out"
+                  : isAdding
+                    ? "Adding…"
+                    : added
+                      ? "Added to Bag"
+                      : "Add to Bag"}
               </button>
 
               <button
@@ -319,8 +338,13 @@ export default function ProductDetail() {
 
               <Accordion title="Shipping &amp; Returns">
                 <p>
-                  Free delivery on orders above ₹1,499. Easy 7-day returns with
-                  free pickup — the piece must be unworn with tags attached.
+                  {/* Threshold is store config, not a constant — the dashboard
+                      can change it without a redeploy. */}
+                  {config
+                    ? `Free delivery on orders above ${formatPrice(config.freeShippingThreshold)}. `
+                    : ""}
+                  Easy 7-day returns with free pickup — the piece must be unworn
+                  with tags attached.
                 </p>
               </Accordion>
             </div>
@@ -329,7 +353,8 @@ export default function ProductDetail() {
       </div>
 
       {/* ── Similar ────────────────────────────────────────────────── */}
-      <section className="py-12">
+      {similar.length > 0 && (
+        <section className="py-12">
         <SectionHeading title="You May Also Like" />
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-4 gap-y-8 px-4 sm:px-6 md:grid-cols-4 lg:px-10">
           {similar.map((p) => (
@@ -341,7 +366,8 @@ export default function ProductDetail() {
             />
           ))}
         </div>
-      </section>
+        </section>
+      )}
 
       <SiteFooter />
 

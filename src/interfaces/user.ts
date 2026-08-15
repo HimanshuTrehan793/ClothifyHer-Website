@@ -19,6 +19,8 @@ export interface SavedAddress {
   phone: string;
   line1: string;
   line2?: string;
+  /** Optional "near the temple" hint the API stores alongside the address. */
+  landmark?: string;
   city: string;
   state: string;
   pincode: string;

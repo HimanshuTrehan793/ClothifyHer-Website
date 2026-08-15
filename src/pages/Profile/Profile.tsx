@@ -24,16 +24,15 @@ import {
   selectPhoneNumber,
 } from "@/features/auth/authSlice";
 import { useLogoutMutation } from "@/features/auth/authApi";
+import { selectProfile, updateProfile } from "@/features/user/userSlice";
 import {
-  addAddress,
-  removeAddress,
-  selectAddresses,
-  selectProfile,
-  setDefaultAddress,
-  updateAddress,
-  updateProfile,
-} from "@/features/user/userSlice";
-import { selectWishlistCount } from "@/features/wishlist/wishlistSlice";
+  useCreateAddressMutation,
+  useDeleteAddressMutation,
+  useGetAddressesQuery,
+  useSetDefaultAddressMutation,
+  useUpdateAddressMutation,
+} from "@/features/address/addressApi";
+import { useWishlist } from "@/features/wishlist/useWishlist";
 import type { Gender, SavedAddress } from "@/interfaces/user";
 
 const GENDERS: { value: Gender; label: string }[] = [
@@ -46,11 +45,21 @@ const GENDERS: { value: Gender; label: string }[] = [
 export default function Profile() {
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  /* Personal details stay local: the API exposes no profile endpoint (only
+     /auth otp/verify/refresh/logout), so there is nothing to read or write
+     them against. Addresses, which do have an endpoint, are server-backed. */
   const profile = useAppSelector(selectProfile);
-  const addresses = useAppSelector(selectAddresses);
   const phoneNumber = useAppSelector(selectPhoneNumber);
-  const wishCount = useAppSelector(selectWishlistCount);
+  const { count: wishCount } = useWishlist();
   const [logoutReq] = useLogoutMutation();
+
+  const { data: addresses = [] } = useGetAddressesQuery(undefined, {
+    skip: !isAuthenticated,
+  });
+  const [createAddress] = useCreateAddressMutation();
+  const [updateAddressReq] = useUpdateAddressMutation();
+  const [deleteAddress] = useDeleteAddressMutation();
+  const [setDefaultAddress] = useSetDefaultAddressMutation();
 
   /* Destroy the server session, then clear local auth regardless of the
      network result — a failed logout call must never strand the user. */
@@ -383,7 +392,7 @@ export default function Profile() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => dispatch(removeAddress(address.id))}
+                      onClick={() => deleteAddress(address.id)}
                       className="inline-flex items-center gap-1 text-stone-500 hover:text-red-600"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -392,7 +401,7 @@ export default function Profile() {
                     {!address.isDefault && (
                       <button
                         type="button"
-                        onClick={() => dispatch(setDefaultAddress(address.id))}
+                        onClick={() => setDefaultAddress(address.id)}
                         className="ml-auto text-stone-500 hover:text-stone-800"
                       >
                         Set as default
@@ -413,7 +422,13 @@ export default function Profile() {
         address={editAddress}
         onClose={() => setDialogOpen(false)}
         onSave={(address) => {
-          dispatch(editAddress ? updateAddress(address) : addAddress(address));
+          /* The dialog mints a client-side id for new rows; the server assigns
+             the real one, so only `changes` travel on an update. */
+          if (editAddress) {
+            updateAddressReq({ id: editAddress.id, changes: address });
+          } else {
+            createAddress(address);
+          }
           setDialogOpen(false);
         }}
       />

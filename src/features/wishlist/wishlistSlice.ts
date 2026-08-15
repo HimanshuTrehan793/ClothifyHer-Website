@@ -3,7 +3,6 @@ import type { RootState } from "@/app/store";
 import type { WishlistEntry } from "@/interfaces/cart";
 import type { Product } from "@/interfaces/catalog";
 import { readJSON, writeJSON } from "@/utils/storage";
-import { DEMO_WISHLIST } from "@/utils/mockData";
 import { WISHLIST_STORAGE_KEY } from "@/utils/constants";
 
 interface WishlistState {
@@ -12,15 +11,12 @@ interface WishlistState {
 
 /**
  * Guest-friendly by design: the wishlist lives in localStorage so hearting
- * something never demands a login. On sign-in these entries get merged into
- * the account (Phase 2). The flow doc gates this behind login — see decision
- * #2 in DEVELOPMENT_PLAN.md; this is the reversible half of that call.
+ * something never demands a login. On sign-in `AuthSync` merges these entries
+ * into the account via `POST /api/wishlist/merge` and clears them, after which
+ * the server is the single source of truth — see `useWishlist`.
  */
 const initialState: WishlistState = {
-  // DEMO_WISHLIST only on a first visit — see the seed note in mockData.ts.
-  entries:
-    readJSON<WishlistEntry[] | null>(WISHLIST_STORAGE_KEY, null) ??
-    DEMO_WISHLIST,
+  entries: readJSON<WishlistEntry[] | null>(WISHLIST_STORAGE_KEY, null) ?? [],
 };
 
 const persist = (state: WishlistState) =>

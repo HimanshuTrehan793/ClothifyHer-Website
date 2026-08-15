@@ -28,17 +28,21 @@ import { SubCategoryRail } from "@/components/common/SubCategoryRail";
 import { BackButton } from "@/components/bits/BackButton";
 import { useGetProductsQuery } from "@/features/product/productApi";
 import {
-  CATALOG,
-  CATEGORY_META,
-  COLLECTION_FILTERS,
-  COLLECTION_META,
-  SUBCATEGORIES,
-  subCategoryLabel,
-} from "@/utils/mockData";
+  useGetCategoryBySlugQuery,
+  useGetSubCategoriesQuery,
+} from "@/features/category/categoryApi";
 import { SITE_URL } from "@/utils/constants";
 
 /** Items appended per scroll batch. */
 const PAGE_SIZE = 8;
+
+/** Copy for the merchandised pseudo-categories that aren't real API rows. */
+const COLLECTION_TITLES: Record<string, string> = {
+  trending: "Trending Now",
+  "new-arrivals": "New Arrivals",
+  "best-sellers": "Best Sellers",
+  sale: "On Sale",
+};
 
 export default function CategoryListing() {
   const { categorySlug = "" } = useParams();
@@ -47,25 +51,13 @@ export default function CategoryListing() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const meta = CATEGORY_META[categorySlug] ?? COLLECTION_META[categorySlug];
-
-  /* Real categories come from the API by slug. The collection pseudo-categories
-     (sale, trending, best-sellers, new-arrivals) still draw from mock data —
-     they key off badge/rating signals the catalog API doesn't expose yet. */
-  const isCollection = Boolean(COLLECTION_FILTERS[categorySlug]);
-  const { data: apiList, isLoading: productsLoading } = useGetProductsQuery(
-    isCollection ? skipToken : { category: categorySlug, limit: 100 },
-  );
-  const loading = !isCollection && productsLoading;
-
-  /* Everything in this listing, before facets. */
-  const inCategory = useMemo(() => {
-    if (isCollection) {
-      const collectionFilter = COLLECTION_FILTERS[categorySlug];
-      return collectionFilter ? CATALOG.filter(collectionFilter) : [];
-    }
-    return apiList?.items ?? [];
-  }, [isCollection, categorySlug, apiList]);
+  /* A slug is either a real category or one of the merchandised collections
+     (trending, new-arrivals, …). Ask for the category first: a 404 means the
+     slug is a collection, which filters on the product's `collection` array
+     instead of its category. */
+  const { data: category, isError: notACategory } =
+    useGetCategoryBySlugQuery(categorySlug);
+  const isCollection = notACategory;
 
   /* Filters and sort live in the URL so a filtered listing is shareable and
      the back button steps through refinements. */
@@ -77,30 +69,50 @@ export default function CategoryListing() {
     [searchParams],
   );
   const sort = (searchParams.get("sort") as SortKey) ?? "featured";
-
-  /* Subcategory is a navigational refinement, not a facet — single-select,
-     and it narrows the pool the facets then work on. */
-  const subCategories = SUBCATEGORIES[categorySlug] ?? [];
   const activeSub = searchParams.get("sub");
 
-  const inScope = useMemo(
-    () =>
-      activeSub
-        ? inCategory.filter((p) => p.subCategory === activeSub)
-        : inCategory,
-    [inCategory, activeSub],
+  /* The list endpoint doesn't return each product's sub-category, so the rail
+     has to refine server-side rather than filtering the fetched page. */
+  const { data: apiList, isLoading: loading } = useGetProductsQuery(
+    isCollection
+      ? { collection: categorySlug, limit: 100 }
+      : category
+        ? {
+            category: categorySlug,
+            ...(activeSub ? { sub_category: activeSub } : {}),
+            limit: 100,
+          }
+        : skipToken,
   );
 
-  /* Counts come from the category pool, not the filtered one, so a chip
-     always says how much is behind it rather than reacting to other facets. */
-  const subCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const p of inCategory) {
-      if (p.subCategory)
-        counts[p.subCategory] = (counts[p.subCategory] ?? 0) + 1;
-    }
-    return counts;
-  }, [inCategory]);
+  const title =
+    category?.name ?? COLLECTION_TITLES[categorySlug] ?? categorySlug;
+
+  /* Everything in this listing, before facets. */
+  const inCategory = apiList?.items ?? [];
+
+  /* Subcategory is a navigational refinement, not a facet — single-select,
+     and it narrows the pool the facets then work on. Collections span
+     categories, so they have no subcategory rail. */
+  const { data: apiSubCategories = [] } = useGetSubCategoriesQuery(
+    isCollection ? skipToken : categorySlug,
+  );
+  const subCategories = useMemo(
+    () =>
+      apiSubCategories.map((s) => ({
+        slug: s.slug,
+        label: s.name,
+        image: s.image ?? "",
+      })),
+    [apiSubCategories],
+  );
+  const subCategoryLabel = (slug: string) =>
+    apiSubCategories.find((s) => s.slug === slug)?.name ?? slug;
+
+  /* The sub-category refinement is applied by the API, so the fetched page is
+     already in scope. Per-chip counts would need one list request each, so the
+     chips carry no count. */
+  const inScope = inCategory;
 
   const results = useMemo(
     () => applySort(applyFilters(inScope, filters), sort),
@@ -129,15 +141,14 @@ export default function CategoryListing() {
   const visible = results.slice(0, page * PAGE_SIZE);
   const hasMore = visible.length < results.length;
 
+  /* The listing fetches a full page of products up front and reveals them in
+     batches, so "load more" is a local reveal rather than a request. */
   const loadMore = useCallback(() => {
     setLoadingMore(true);
-    // Simulated latency — becomes a real request in Phase 1.
-    window.setTimeout(() => {
-      const params = new URLSearchParams(window.location.search);
-      params.set("page", String(page + 1));
-      setSearchParams(params, { replace: true });
-      setLoadingMore(false);
-    }, 450);
+    const params = new URLSearchParams(window.location.search);
+    params.set("page", String(page + 1));
+    setSearchParams(params, { replace: true });
+    setLoadingMore(false);
   }, [page, setSearchParams]);
 
   const sentinelRef = useInfiniteScroll({
@@ -186,7 +197,15 @@ export default function CategoryListing() {
     commit(params);
   };
 
-  if (!meta) {
+  /* The slug is neither a category the API knows nor a collection with any
+     products behind it — that's a bad URL, not an empty listing. */
+  const notFound =
+    notACategory &&
+    !loading &&
+    !COLLECTION_TITLES[categorySlug] &&
+    (apiList?.items.length ?? 0) === 0;
+
+  if (notFound) {
     return (
       <>
         <Helmet>
@@ -219,22 +238,22 @@ export default function CategoryListing() {
   return (
     <>
       <Helmet>
-        <title>{`${meta.name} — ClothifyHer`}</title>
-        <meta name="description" content={meta.tagline} />
+        <title>{`${title} — ClothifyHer`}</title>
+        <meta name="description" content={`Shop ${title} at ClothifyHer.`} />
         {/* Infinite scroll is a UI affordance layered over real paged state.
             rel prev/next keeps the sequence walkable for crawlers, and the
             canonical always points at the unpaginated listing. */}
-        <link rel="canonical" href={`${SITE_URL}/categories/${meta.slug}`} />
+        <link rel="canonical" href={`${SITE_URL}/categories/${categorySlug}`} />
         {page > 1 && (
           <link
             rel="prev"
-            href={`${SITE_URL}/categories/${meta.slug}${page > 2 ? `?page=${page - 1}` : ""}`}
+            href={`${SITE_URL}/categories/${categorySlug}${page > 2 ? `?page=${page - 1}` : ""}`}
           />
         )}
         {hasMore && (
           <link
             rel="next"
-            href={`${SITE_URL}/categories/${meta.slug}?page=${page + 1}`}
+            href={`${SITE_URL}/categories/${categorySlug}?page=${page + 1}`}
           />
         )}
       </Helmet>
@@ -250,21 +269,21 @@ export default function CategoryListing() {
               </Link>
             </li>
             <ChevronRight className="h-3 w-3" />
-            <li className="text-stone-700">{meta.name}</li>
+            <li className="text-stone-700">{title}</li>
           </ol>
         </nav>
 
         <header className="mt-4">
           <h1 className="font-serif text-3xl text-stone-900 sm:text-4xl">
-            {meta.name}
+            {title}
             {activeSub && (
               <span className="text-maroon-700">
                 {" · "}
-                {subCategoryLabel(categorySlug, activeSub)}
+                {subCategoryLabel(activeSub)}
               </span>
             )}
           </h1>
-          <p className="mt-1 text-sm text-stone-500">{meta.tagline}</p>
+          
         </header>
 
         {/* Toolbar. One row from lg (count + rail, Filters is hidden there);
@@ -300,8 +319,7 @@ export default function CategoryListing() {
                 subCategories={subCategories}
                 active={activeSub}
                 onSelect={selectSub}
-                counts={subCounts}
-                totalCount={inCategory.length}
+                totalCount={apiList?.meta?.totalItems ?? inCategory.length}
               />
             </div>
           )}
@@ -364,8 +382,8 @@ export default function CategoryListing() {
                   Try widening your selection — there are {inScope.length} items
                   in{" "}
                   {activeSub
-                    ? subCategoryLabel(categorySlug, activeSub)
-                    : meta.name}
+                    ? subCategoryLabel(activeSub)
+                    : title}
                   .
                 </p>
                 <button
@@ -439,7 +457,7 @@ export default function CategoryListing() {
                 ) : (
                   results.length > PAGE_SIZE && (
                     <p className="py-10 text-center text-sm text-stone-400">
-                      You've seen all {results.length} items in {meta.name}.
+                      You've seen all {results.length} items in {title}.
                     </p>
                   )
                 )}

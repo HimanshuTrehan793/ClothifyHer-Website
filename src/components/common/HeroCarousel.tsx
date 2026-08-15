@@ -50,17 +50,23 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 serif headlines over each other reads as a double exposure. */}
             {i === index && (
               <div className="absolute inset-x-0 bottom-0 mx-auto max-w-7xl animate-[fadeIn_500ms_ease-out] px-5 pb-12 sm:px-8 sm:pb-16 lg:px-10 lg:pb-24">
-                <span className="bg-maroon-800 inline-block rounded-full px-4 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-white uppercase">
-                  {slide.eyebrow}
-                </span>
+                {slide.eyebrow && (
+                  <span className="bg-maroon-800 inline-block rounded-full px-4 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-white uppercase">
+                    {slide.eyebrow}
+                  </span>
+                )}
 
-                <h1 className="mt-4 max-w-2xl font-serif text-5xl leading-[1.02] text-white sm:text-6xl lg:text-7xl">
-                  {slide.title}
-                </h1>
+                {slide.title && (
+                  <h1 className="mt-4 max-w-2xl font-serif text-5xl leading-[1.02] text-white sm:text-6xl lg:text-7xl">
+                    {slide.title}
+                  </h1>
+                )}
 
-                <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/85 sm:text-base">
-                  {slide.subtitle}
-                </p>
+                {slide.subtitle && (
+                  <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/85 sm:text-base">
+                    {slide.subtitle}
+                  </p>
+                )}
 
                 <div className="mt-7 flex flex-wrap gap-3">
                   <Link
