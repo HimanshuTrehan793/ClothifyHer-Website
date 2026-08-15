@@ -18,7 +18,7 @@ export function CategoryStories({ stories, action }: CategoryStoriesProps) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
         {action && (
           <div className="flex items-center justify-between gap-4 pt-3">
-            <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+            <span className="text-xs font-semibold tracking-wide text-stone-500 uppercase">
               Shop by Category
             </span>
             <Link

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { useGetConfigurationQuery } from "@/features/configuration/configurationApi";
 
 const MESSAGES = [
   "Free shipping on orders above ₹1,499",
@@ -14,19 +15,28 @@ export function AnnouncementBar() {
   const [dismissed, setDismissed] = useState(true); // assume hidden until checked
   const [index, setIndex] = useState(0);
 
+  /* Store-controlled announcement. When the merchant has turned one on we show
+     that single line; otherwise we fall back to the rotating house messages so
+     the bar never goes empty while config is loading or disabled. */
+  const { data: config } = useGetConfigurationQuery();
+  const messages =
+    config?.announcementEnabled && config.announcementText
+      ? [config.announcementText]
+      : MESSAGES;
+
   // Read once on mount so the bar never flashes for someone who closed it.
   useEffect(() => {
     setDismissed(localStorage.getItem(DISMISS_KEY) === "true");
   }, []);
 
   useEffect(() => {
-    if (dismissed) return;
+    if (dismissed || messages.length <= 1) return;
     const id = setInterval(
-      () => setIndex((i) => (i + 1) % MESSAGES.length),
+      () => setIndex((i) => (i + 1) % messages.length),
       ROTATE_MS,
     );
     return () => clearInterval(id);
-  }, [dismissed]);
+  }, [dismissed, messages.length]);
 
   if (dismissed) return null;
 
@@ -43,7 +53,7 @@ export function AnnouncementBar() {
           aria-live="polite"
           className="animate-[fadeIn_400ms_ease-out] text-center text-[12px] font-medium tracking-wide sm:text-[13px]"
         >
-          {MESSAGES[index]}
+          {messages[index % messages.length]}
         </p>
       </div>
 

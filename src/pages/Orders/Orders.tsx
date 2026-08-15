@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/bits/EmptyState";
 import { OrderStatusPill } from "@/components/bits/OrderStatusPill";
 import { SiteFooter } from "@/components/common/SiteFooter";
+import { BackButton } from "@/components/bits/BackButton";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { openLogin, selectIsAuthenticated } from "@/features/auth/authSlice";
 import { formatPrice } from "@/utils/format";
@@ -48,7 +49,11 @@ export default function Orders() {
           <title>Your Orders — ClothifyHer</title>
         </Helmet>
 
-        <div className="mx-auto flex max-w-sm flex-col items-center px-6 py-20 text-center">
+        <div className="mx-auto max-w-4xl px-4 pt-6 sm:px-6 lg:px-10">
+          <BackButton />
+        </div>
+
+        <div className="mx-auto flex max-w-sm flex-col items-center px-6 pt-10 pb-20 text-center">
           <span className="bg-maroon-50 grid h-20 w-20 place-items-center rounded-full">
             <Lock className="text-maroon-700 h-8 w-8" strokeWidth={1.5} />
           </span>
@@ -83,6 +88,8 @@ export default function Orders() {
       </Helmet>
 
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-10">
+        <BackButton fallback="/" className="mb-4" />
+
         <h1 className="font-serif text-3xl text-stone-900">Your Orders</h1>
         <p className="mt-1 text-sm text-stone-500">
           Track, return or buy again

@@ -9,11 +9,7 @@ import { SiteFooter } from "@/components/common/SiteFooter";
 import { Testimonials } from "@/components/common/Testimonials";
 import { TrendingNow } from "@/components/common/TrendingNow";
 import { TrustStrip } from "@/components/common/TrustStrip";
-import { useAppDispatch, useAppSelector } from "@/app/hooks";
-import {
-  selectWishlistIds,
-  toggleWishlist,
-} from "@/features/wishlist/wishlistSlice";
+import { useWishlist } from "@/features/wishlist/useWishlist";
 import {
   CATEGORY_STORIES,
   FEATURED_COLLECTION,
@@ -24,8 +20,7 @@ import {
 } from "@/utils/mockData";
 
 export default function Home() {
-  const dispatch = useAppDispatch();
-  const wishlistIds = useAppSelector(selectWishlistIds);
+  const { ids: wishlistIds, toggle: toggleWishlist } = useWishlist();
   const { hash } = useLocation();
 
   useEffect(() => {
@@ -46,7 +41,7 @@ export default function Home() {
     const product =
       TRENDING_PRODUCTS.find((p) => p.id === productId) ??
       FEATURED_COLLECTION.products.find((p) => p.id === productId);
-    if (product) dispatch(toggleWishlist(product));
+    if (product) toggleWishlist(product);
   };
 
   return (

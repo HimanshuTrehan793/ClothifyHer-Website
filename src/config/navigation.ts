@@ -35,6 +35,7 @@ export const COLLECTIONS: NavLink[] = [
   { label: "Office Wear", href: "/collections/office-wear" },
   { label: "Casual", href: "/collections/casual" },
   { label: "Wedding", href: "/collections/wedding" },
+  { label: "Winter", href: "/collections/winter" },
 ];
 
 export const PRIMARY_NAV: PrimaryNavItem[] = [

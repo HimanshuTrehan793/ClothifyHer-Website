@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
+import { AuthSync } from "@/features/auth/AuthSync";
 import { LoginDialog } from "@/components/dialog/LoginDialog";
 import { ErrorBoundary } from "@/components/error/ErrorBoundary";
 import Home from "@/pages/Home/Home";
@@ -18,6 +19,7 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <AuthSync />
       <MainLayout>
         {/* Inside the layout so a page error keeps the header and nav usable. */}
         <ErrorBoundary>

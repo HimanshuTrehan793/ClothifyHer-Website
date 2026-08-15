@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { skipToken } from "@reduxjs/toolkit/query/react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router";
 import { ChevronRight, Heart, PackageX, ShoppingBag } from "lucide-react";
@@ -13,27 +14,32 @@ import { ProductGallery } from "@/components/custom/ProductGallery";
 import { ProductCard } from "@/components/custom/card/ProductCard";
 import { SiteFooter } from "@/components/common/SiteFooter";
 import { SizeGuideDialog } from "@/components/dialog/SizeGuideDialog";
-import { useAppDispatch, useAppSelector } from "@/app/hooks";
+import { BackButton } from "@/components/bits/BackButton";
+import { useAppDispatch } from "@/app/hooks";
 import { addToCart } from "@/features/cart/cartSlice";
-import {
-  selectWishlistIds,
-  toggleWishlist,
-} from "@/features/wishlist/wishlistSlice";
+import { useWishlist } from "@/features/wishlist/useWishlist";
 import { galleryOf } from "@/utils/media";
 import type { ProductVariant } from "@/interfaces/catalog";
+import { useGetProductBySlugQuery } from "@/features/product/productApi";
 import { CATALOG } from "@/utils/mockData";
 
-const ALL_PRODUCTS = CATALOG;
-
 export default function ProductDetail() {
-  const { productId } = useParams();
+  const { productId: param = "" } = useParams();
   const dispatch = useAppDispatch();
-  const wishlistIds = useAppSelector(selectWishlistIds);
+  const { ids: wishlistIds, toggle: toggleWishlist } = useWishlist();
 
-  const product = useMemo(
-    () => ALL_PRODUCTS.find((p) => p.id === productId),
-    [productId],
+  /* Mock rows are keyed by id ("p1"); real products resolve by slug via the
+     API. Prefer a mock match so we don't fire a doomed request for seed data
+     that hasn't been migrated yet. */
+  const mockProduct = useMemo(
+    () => CATALOG.find((p) => p.id === param),
+    [param],
   );
+  const { data: apiProduct, isLoading } = useGetProductBySlugQuery(
+    mockProduct || !param ? skipToken : param,
+  );
+  const product = mockProduct ?? apiProduct;
+  const loading = !mockProduct && isLoading;
 
   const [variantId, setVariantId] = useState<string | null>(null);
   const [size, setSize] = useState<string | null>(null);
@@ -49,7 +55,16 @@ export default function ProductDetail() {
     setSizeError(false);
     setAdded(false);
     window.scrollTo({ top: 0 });
-  }, [productId]);
+  }, [param]);
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-24 text-center text-stone-500">
+        <div className="border-t-maroon-700 mx-auto h-7 w-7 animate-spin rounded-full border-2 border-stone-300" />
+        <p className="mt-3 text-sm">Loading…</p>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -80,7 +95,7 @@ export default function ProductDetail() {
   const sizes = variant?.sizes ?? product.sizes;
   const soldOut = sizes.length === 0;
   const wishlisted = wishlistIds.has(product.id);
-  const similar = ALL_PRODUCTS.filter((p) => p.id !== product.id).slice(0, 4);
+  const similar = CATALOG.filter((p) => p.id !== product.id).slice(0, 4);
 
   const handleAddToCart = () => {
     // The single biggest conversion leak on mobile is a silent no-op here.
@@ -106,6 +121,8 @@ export default function ProductDetail() {
       </Helmet>
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-10">
+        <BackButton fallback="/" className="mb-4" />
+
         <nav aria-label="Breadcrumb" className="mb-5 text-xs text-stone-500">
           <ol className="flex items-center gap-1.5">
             <li>
@@ -249,7 +266,7 @@ export default function ProductDetail() {
 
               <button
                 type="button"
-                onClick={() => dispatch(toggleWishlist(product))}
+                onClick={() => toggleWishlist(product)}
                 aria-pressed={wishlisted}
                 className="hover:border-maroon-600 inline-flex h-13 items-center gap-2 rounded-full border border-stone-300 px-6 text-sm font-semibold text-stone-700 transition-colors"
               >
@@ -320,7 +337,7 @@ export default function ProductDetail() {
               key={p.id}
               product={p}
               wishlisted={wishlistIds.has(p.id)}
-              onToggleWishlist={() => dispatch(toggleWishlist(p))}
+              onToggleWishlist={() => toggleWishlist(p)}
             />
           ))}
         </div>
@@ -328,9 +345,13 @@ export default function ProductDetail() {
 
       <SiteFooter />
 
-      {/* Sticky buy bar — mobile only, clears the bottom tab bar. */}
+      {/* Clears the fixed bar so it never covers the end of the footer. */}
+      {!soldOut && <div aria-hidden className="h-24 lg:hidden" />}
+
+      {/* Sticky buy bar — mobile only, pinned to the bottom of the viewport.
+          `safe-area-inset-bottom` keeps it clear of the iOS home indicator. */}
       {!soldOut && (
-        <div className="border-maroon-100 bg-cream-50/95 fixed inset-x-0 bottom-[68px] z-40 flex items-center gap-3 border-t px-4 py-3 backdrop-blur-md lg:hidden">
+        <div className="border-maroon-100 bg-cream-50/95 fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-md lg:hidden">
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs text-stone-500">{product.title}</p>
             <PriceTag price={price} mrp={mrp} />
@@ -348,7 +369,19 @@ export default function ProductDetail() {
         </div>
       )}
 
-      <SizeGuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
+      <SizeGuideDialog
+        open={guideOpen}
+        onClose={() => setGuideOpen(false)}
+        category={product.category}
+        selectedSize={size}
+        onConfirm={(picked) => {
+          // Picking in the chart is a size choice — apply it and close.
+          setSize(picked);
+          setSizeError(false);
+          setAdded(false);
+          setGuideOpen(false);
+        }}
+      />
     </>
   );
 }

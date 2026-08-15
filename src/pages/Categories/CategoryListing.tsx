@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { skipToken } from "@reduxjs/toolkit/query/react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams, useSearchParams } from "react-router";
 import {
@@ -15,11 +16,7 @@ import { ProductCard } from "@/components/custom/card/ProductCard";
 import { ProductCardSkeleton } from "@/components/skeletons/ProductCardSkeleton";
 import { SiteFooter } from "@/components/common/SiteFooter";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
-import { useAppDispatch, useAppSelector } from "@/app/hooks";
-import {
-  selectWishlistIds,
-  toggleWishlist,
-} from "@/features/wishlist/wishlistSlice";
+import { useWishlist } from "@/features/wishlist/useWishlist";
 import {
   applyFilters,
   applySort,
@@ -28,6 +25,8 @@ import {
   type SortKey,
 } from "@/utils/catalogFilters";
 import { SubCategoryRail } from "@/components/common/SubCategoryRail";
+import { BackButton } from "@/components/bits/BackButton";
+import { useGetProductsQuery } from "@/features/product/productApi";
 import {
   CATALOG,
   CATEGORY_META,
@@ -43,23 +42,30 @@ const PAGE_SIZE = 8;
 
 export default function CategoryListing() {
   const { categorySlug = "" } = useParams();
-  const dispatch = useAppDispatch();
-  const wishlistIds = useAppSelector(selectWishlistIds);
+  const { ids: wishlistIds, toggle: toggleWishlist } = useWishlist();
   const [searchParams, setSearchParams] = useSearchParams();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
   const meta = CATEGORY_META[categorySlug] ?? COLLECTION_META[categorySlug];
 
-  /* Everything in this listing, before facets. Collections (sale, trending,
-     best-sellers, new-arrivals) are pseudo-categories: they draw from the whole
-     catalog by a rule rather than matching on `category`. */
+  /* Real categories come from the API by slug. The collection pseudo-categories
+     (sale, trending, best-sellers, new-arrivals) still draw from mock data —
+     they key off badge/rating signals the catalog API doesn't expose yet. */
+  const isCollection = Boolean(COLLECTION_FILTERS[categorySlug]);
+  const { data: apiList, isLoading: productsLoading } = useGetProductsQuery(
+    isCollection ? skipToken : { category: categorySlug, limit: 100 },
+  );
+  const loading = !isCollection && productsLoading;
+
+  /* Everything in this listing, before facets. */
   const inCategory = useMemo(() => {
-    const collectionFilter = COLLECTION_FILTERS[categorySlug];
-    return collectionFilter
-      ? CATALOG.filter(collectionFilter)
-      : CATALOG.filter((p) => p.category === categorySlug);
-  }, [categorySlug]);
+    if (isCollection) {
+      const collectionFilter = COLLECTION_FILTERS[categorySlug];
+      return collectionFilter ? CATALOG.filter(collectionFilter) : [];
+    }
+    return apiList?.items ?? [];
+  }, [isCollection, categorySlug, apiList]);
 
   /* Filters and sort live in the URL so a filtered listing is shareable and
      the back button steps through refinements. */
@@ -234,6 +240,8 @@ export default function CategoryListing() {
       </Helmet>
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-10">
+        <BackButton fallback="/" className="mb-4" />
+
         <nav aria-label="Breadcrumb" className="text-xs text-stone-500">
           <ol className="flex items-center gap-1.5">
             <li>
@@ -259,18 +267,35 @@ export default function CategoryListing() {
           <p className="mt-1 text-sm text-stone-500">{meta.tagline}</p>
         </header>
 
-        {/* Toolbar: count · subcategory rail · filters, all on one band.
-            The rail wraps to its own line only when there isn't room. */}
-        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 border-y border-stone-200 py-3">
-          <p className="shrink-0 text-sm text-stone-600">
-            <span className="font-semibold text-stone-900">
-              {results.length}
-            </span>{" "}
-            {results.length === 1 ? "item" : "items"}
-          </p>
+        {/* Toolbar. One row from lg (count + rail, Filters is hidden there);
+            below that the rail drops to its own line — it bleeds to the screen
+            edges to scroll, so sharing a line with Filters made them collide. */}
+        <div className="mt-5 flex flex-col gap-3 border-y border-stone-200 py-3 lg:flex-row lg:items-center lg:gap-5">
+          <div className="flex items-center justify-between gap-4 lg:justify-start">
+            <p className="shrink-0 text-sm text-stone-600">
+              <span className="font-semibold text-stone-900">
+                {results.length}
+              </span>{" "}
+              {results.length === 1 ? "item" : "items"}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setSheetOpen(true)}
+              className="hover:border-maroon-600 inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-stone-300 px-4 text-sm font-medium text-stone-700 lg:hidden"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Filters
+              {activeCount > 0 && (
+                <span className="bg-maroon-800 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[10px] font-bold text-white">
+                  {activeCount}
+                </span>
+              )}
+            </button>
+          </div>
 
           {subCategories.length > 0 && (
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 lg:flex-1">
               <SubCategoryRail
                 subCategories={subCategories}
                 active={activeSub}
@@ -280,20 +305,6 @@ export default function CategoryListing() {
               />
             </div>
           )}
-
-          <button
-            type="button"
-            onClick={() => setSheetOpen(true)}
-            className="hover:border-maroon-600 ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-stone-300 px-4 text-sm font-medium text-stone-700 lg:hidden"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            Filters
-            {activeCount > 0 && (
-              <span className="bg-maroon-800 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[10px] font-bold text-white">
-                {activeCount}
-              </span>
-            )}
-          </button>
         </div>
 
         {/* Active filter chips */}
@@ -335,7 +346,15 @@ export default function CategoryListing() {
           </aside>
 
           <div className="min-w-0 flex-1">
-            {results.length === 0 ? (
+            {loading ? (
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 xl:grid-cols-4">
+                {Array.from({ length: PAGE_SIZE }, (_, i) => (
+                  <li key={`skeleton-${i}`}>
+                    <ProductCardSkeleton />
+                  </li>
+                ))}
+              </ul>
+            ) : results.length === 0 ? (
               /* Never a dead end — always offer the way out. */
               <div className="py-20 text-center">
                 <h2 className="font-serif text-2xl text-stone-900">
@@ -365,9 +384,7 @@ export default function CategoryListing() {
                       <ProductCard
                         product={product}
                         wishlisted={wishlistIds.has(product.id)}
-                        onToggleWishlist={() =>
-                          dispatch(toggleWishlist(product))
-                        }
+                        onToggleWishlist={() => toggleWishlist(product)}
                       />
                     </li>
                   ))}

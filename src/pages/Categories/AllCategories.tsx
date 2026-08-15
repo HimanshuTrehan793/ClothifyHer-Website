@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { Link } from "react-router";
 import { ArrowUpRight, ChevronRight } from "lucide-react";
 import { SiteFooter } from "@/components/common/SiteFooter";
+import { BackButton } from "@/components/bits/BackButton";
 import {
   CATALOG,
   CATEGORY_META,
@@ -37,6 +38,8 @@ export default function AllCategories() {
       </Helmet>
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-10">
+        <BackButton fallback="/" className="mb-4" />
+
         <nav aria-label="Breadcrumb" className="text-xs text-stone-500">
           <ol className="flex items-center gap-1.5">
             <li>
@@ -90,7 +93,7 @@ export default function AllCategories() {
                         </span>
                       )}
                       {count > 0 && (
-                        <span className="mt-1 block text-[11px] font-medium uppercase tracking-wide text-white/70">
+                        <span className="mt-1 block text-[11px] font-medium tracking-wide text-white/70 uppercase">
                           {count} {count === 1 ? "style" : "styles"}
                         </span>
                       )}

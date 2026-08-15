@@ -15,6 +15,7 @@ import { OrderStatusPill } from "@/components/bits/OrderStatusPill";
 import { PriceTag } from "@/components/bits/PriceTag";
 import { OrderTimeline } from "@/components/custom/OrderTimeline";
 import { SiteFooter } from "@/components/common/SiteFooter";
+import { BackButton } from "@/components/bits/BackButton";
 import { formatPrice } from "@/utils/format";
 import { findOrder } from "@/utils/mockOrders";
 import type { PaymentMethod } from "@/interfaces/order";
@@ -61,6 +62,8 @@ export default function OrderDetail() {
       </Helmet>
 
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-10">
+        <BackButton fallback="/orders" className="mb-4" />
+
         <nav aria-label="Breadcrumb" className="text-xs text-stone-500">
           <ol className="flex items-center gap-1.5">
             <li>

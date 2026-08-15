@@ -9,6 +9,7 @@ import { QuantityStepper } from "@/components/bits/QuantityStepper";
 import { SectionHeading } from "@/components/bits/SectionHeading";
 import { ProductCard } from "@/components/custom/card/ProductCard";
 import { SiteFooter } from "@/components/common/SiteFooter";
+import { BackButton } from "@/components/bits/BackButton";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import {
   applyCoupon,
@@ -60,6 +61,44 @@ export default function Cart() {
     else console.info("TODO: navigate to /checkout once Phase 2 lands");
   };
 
+  // The bag is tied to the account, so a signed-out visitor is gated here —
+  // the header sends them to sign in; this covers a direct /cart link.
+  if (!isAuthenticated) {
+    return (
+      <>
+        <Helmet>
+          <title>Your Bag — ClothifyHer</title>
+        </Helmet>
+        <div className="mx-auto max-w-4xl px-4 pt-6 sm:px-6 lg:px-10">
+          <BackButton />
+        </div>
+        <div className="mx-auto flex max-w-sm flex-col items-center px-6 pt-10 pb-20 text-center">
+          <span className="bg-maroon-50 grid h-20 w-20 place-items-center rounded-full">
+            <ShoppingBag
+              className="text-maroon-700 h-8 w-8"
+              strokeWidth={1.5}
+            />
+          </span>
+          <h1 className="mt-6 font-serif text-2xl text-stone-900">
+            Sign in to view your bag
+          </h1>
+          <p className="mt-2 text-sm leading-relaxed text-stone-500">
+            Your bag is saved to your account, so it's waiting for you on every
+            device.
+          </p>
+          <button
+            type="button"
+            onClick={() => dispatch(openLogin("cart"))}
+            className="bg-maroon-800 hover:bg-maroon-900 mt-7 rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:scale-[1.03]"
+          >
+            Sign in
+          </button>
+        </div>
+        <SiteFooter />
+      </>
+    );
+  }
+
   if (!lines.length) {
     return (
       <>
@@ -88,6 +127,8 @@ export default function Cart() {
       </Helmet>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10">
+        <BackButton fallback="/" className="mb-4" />
+
         <h1 className="font-serif text-3xl text-stone-900">Your Bag</h1>
         <p className="mt-1 text-sm text-stone-500">
           {lines.length} {lines.length === 1 ? "item" : "items"}

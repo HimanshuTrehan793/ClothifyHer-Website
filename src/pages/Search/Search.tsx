@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router";
 import { Clock, Search as SearchIcon, X } from "lucide-react";
 import { ProductCard } from "@/components/custom/card/ProductCard";
 import { SiteFooter } from "@/components/common/SiteFooter";
+import { BackButton } from "@/components/bits/BackButton";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
@@ -58,6 +59,8 @@ export default function Search() {
       </Helmet>
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-10">
+        <BackButton fallback="/" className="mb-4" />
+
         {/* ── Search field ─────────────────────────────────────────── */}
         <form
           role="search"

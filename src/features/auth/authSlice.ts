@@ -7,7 +7,7 @@ import { ACCESS_TOKEN_KEY } from "@/utils/constants";
  * session. `intent` records what the user was trying to do so we can finish it
  * for them instead of dumping them on the home page after sign-in.
  */
-export type LoginIntent = "checkout" | "wishlist" | "account" | null;
+export type LoginIntent = "checkout" | "wishlist" | "account" | "cart" | null;
 
 interface AuthState {
   accessToken: string | null;

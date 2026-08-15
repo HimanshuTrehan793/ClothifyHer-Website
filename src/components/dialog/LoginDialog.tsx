@@ -11,6 +11,10 @@ import {
   setCredentials,
 } from "@/features/auth/authSlice";
 import {
+  useRequestOtpMutation,
+  useVerifyOtpMutation,
+} from "@/features/auth/authApi";
+import {
   MOCK_OTP,
   OTP_LENGTH,
   OTP_MAX_ATTEMPTS,
@@ -23,6 +27,7 @@ const INTENT_COPY: Record<string, string> = {
   checkout: "Sign in to place your order",
   wishlist: "Sign in to save your favourites",
   account: "Sign in to view your account",
+  cart: "Sign in to view your bag",
 };
 
 export function LoginDialog() {
@@ -33,10 +38,16 @@ export function LoginDialog() {
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [attemptsLeft, setAttemptsLeft] = useState(OTP_MAX_ATTEMPTS);
   const [cooldown, setCooldown] = useState(0);
+
+  const [requestOtp, { isLoading: sending }] = useRequestOtpMutation();
+  const [verifyOtpReq, { isLoading: verifying }] = useVerifyOtpMutation();
+  const busy = sending || verifying;
+
+  /* Backend expects E.164; the field only holds the 10-digit national number. */
+  const phoneE164 = `+91${phone}`;
 
   // Reset whenever the dialog is dismissed so it never reopens mid-flow.
   useEffect(() => {
@@ -45,7 +56,6 @@ export function LoginDialog() {
     setPhone("");
     setOtp("");
     setError(null);
-    setBusy(false);
     setAttemptsLeft(OTP_MAX_ATTEMPTS);
     setCooldown(0);
   }, [open]);
@@ -63,35 +73,64 @@ export function LoginDialog() {
       setError("Enter a valid 10-digit Indian mobile number.");
       return;
     }
-    setBusy(true);
     setError(null);
-    await new Promise((r) => setTimeout(r, 700)); // TODO: POST /auth/send-otp
-    setBusy(false);
-    setStep("otp");
-    setCooldown(OTP_RESEND_SECONDS);
+    try {
+      await requestOtp({ phone_number: phoneE164 }).unwrap();
+      setStep("otp");
+      setOtp("");
+      setAttemptsLeft(OTP_MAX_ATTEMPTS);
+      setCooldown(OTP_RESEND_SECONDS);
+    } catch (err) {
+      setError(
+        errorMessage(err) ?? "Couldn't send the code. Please try again.",
+      );
+    }
+  };
+
+  const resendOtp = async () => {
+    setError(null);
+    try {
+      await requestOtp({ phone_number: phoneE164 }).unwrap();
+      setOtp("");
+      setAttemptsLeft(OTP_MAX_ATTEMPTS);
+      setCooldown(OTP_RESEND_SECONDS);
+    } catch (err) {
+      setError(
+        errorMessage(err) ?? "Couldn't resend the code. Please try again.",
+      );
+    }
   };
 
   const verifyOtp = async (code: string) => {
-    setBusy(true);
     setError(null);
-    await new Promise((r) => setTimeout(r, 700)); // TODO: POST /auth/verify-otp
-    setBusy(false);
-
-    if (code === MOCK_OTP) {
+    try {
+      const tokens = await verifyOtpReq({
+        phone_number: phoneE164,
+        otp_code: code,
+      }).unwrap();
+      // Store the national number so screens can render "+91 <number>".
       dispatch(
-        setCredentials({ access_token: "mock-token", phone_number: phone }),
+        setCredentials({
+          access_token: tokens.access_token,
+          phone_number: phone,
+        }),
       );
-      return;
+    } catch (err) {
+      const status = (err as { status?: number })?.status;
+      setOtp("");
+      if (status === 410) {
+        setError("That code has expired — request a new one.");
+        return;
+      }
+      // 401 = wrong code: keep the local attempts counter for the user.
+      const left = attemptsLeft - 1;
+      setAttemptsLeft(left);
+      setError(
+        left > 0
+          ? `Incorrect code. ${left} attempt${left === 1 ? "" : "s"} left.`
+          : "Too many incorrect attempts. Request a new code.",
+      );
     }
-
-    const left = attemptsLeft - 1;
-    setAttemptsLeft(left);
-    setOtp("");
-    setError(
-      left > 0
-        ? `Incorrect code. ${left} attempt${left === 1 ? "" : "s"} left.`
-        : "Too many incorrect attempts. Request a new code.",
-    );
   };
 
   const locked = attemptsLeft <= 0;
@@ -211,13 +250,8 @@ export function LoginDialog() {
 
             <button
               type="button"
-              disabled={cooldown > 0}
-              onClick={() => {
-                setCooldown(OTP_RESEND_SECONDS);
-                setAttemptsLeft(OTP_MAX_ATTEMPTS);
-                setError(null);
-                setOtp("");
-              }}
+              disabled={cooldown > 0 || busy}
+              onClick={resendOtp}
               className="text-maroon-700 font-medium disabled:text-stone-400"
             >
               {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend OTP"}
@@ -233,6 +267,12 @@ export function LoginDialog() {
       )}
     </Modal>
   );
+}
+
+/** Pulls the backend's error message out of an RTK Query error, if present. */
+function errorMessage(err: unknown): string | null {
+  const data = (err as { data?: { message?: string } })?.data;
+  return typeof data?.message === "string" ? data.message : null;
 }
 
 function Feedback({ id, error }: { id: string; error: string | null }) {

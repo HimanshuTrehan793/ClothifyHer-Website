@@ -154,6 +154,13 @@ export const OCCASIONS: Occasion[] = [
     href: "/collections/summer",
     wide: true,
   },
+  {
+    id: "winter",
+    title: "Winter",
+    caption: "Warm layers & knits",
+    image: img("ch-winter", 700, 900),
+    href: "/collections/winter",
+  },
 ];
 
 export const TRENDING_PRODUCTS: Product[] = [

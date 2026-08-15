@@ -14,13 +14,13 @@ import { Logo } from "@/components/bits/Logo";
 import { PRIMARY_NAV, type PrimaryNavItem } from "@/config/navigation";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { selectCartCount } from "@/features/cart/cartSlice";
-import { selectWishlistCount } from "@/features/wishlist/wishlistSlice";
+import { useWishlist } from "@/features/wishlist/useWishlist";
 import { openLogin, selectIsAuthenticated } from "@/features/auth/authSlice";
 
 export function TopNavBar() {
   const dispatch = useAppDispatch();
   const bagCount = useAppSelector(selectCartCount);
-  const wishCount = useAppSelector(selectWishlistCount);
+  const { count: wishCount } = useWishlist();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const { pathname } = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -94,13 +94,25 @@ export function TopNavBar() {
               <Heart className="h-[22px] w-[22px]" strokeWidth={1.75} />
               {wishCount > 0 && <Badge count={wishCount} />}
             </IconLink>
-            <IconLink
-              to="/cart"
-              label={`Shopping bag, ${bagCount} item${bagCount === 1 ? "" : "s"}`}
-            >
-              <ShoppingBag className="h-[22px] w-[22px]" strokeWidth={1.75} />
-              {bagCount > 0 && <Badge count={bagCount} />}
-            </IconLink>
+            {/* The bag lives on the account — guests are sent to sign in. */}
+            {isAuthenticated ? (
+              <IconLink
+                to="/cart"
+                label={`Shopping bag, ${bagCount} item${bagCount === 1 ? "" : "s"}`}
+              >
+                <ShoppingBag className="h-[22px] w-[22px]" strokeWidth={1.75} />
+                {bagCount > 0 && <Badge count={bagCount} />}
+              </IconLink>
+            ) : (
+              <button
+                type="button"
+                onClick={() => dispatch(openLogin("cart"))}
+                aria-label="Shopping bag"
+                className="hover:bg-maroon-50 focus-visible:ring-maroon-700 relative grid h-10 w-10 place-items-center rounded-full text-stone-800 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              >
+                <ShoppingBag className="h-[22px] w-[22px]" strokeWidth={1.75} />
+              </button>
+            )}
 
             {/* Signed in → straight to the account. Signed out → the login
                 modal, so the user is never bounced to a gated page first. */}

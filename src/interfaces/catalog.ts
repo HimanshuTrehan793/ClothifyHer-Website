@@ -40,8 +40,20 @@ export interface ProductVariant {
   sizes?: string[];
 }
 
+/** A catalog category as the app consumes it (normalized from the API). */
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  image: string | null;
+  position: number;
+  isActive: boolean;
+}
+
 export interface Product {
   id: string;
+  /** URL slug for routing/PDP lookup (`/products/:slug`). Mock rows omit it. */
+  slug?: string;
   brand: string;
   title: string;
   /** Category slug — the `:categorySlug` segment of /categories/:slug. */

@@ -13,6 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BackButton } from "@/components/bits/BackButton";
 import { AddressDialog } from "@/components/dialog/AddressDialog";
 import { SiteFooter } from "@/components/common/SiteFooter";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
@@ -22,6 +23,7 @@ import {
   selectIsAuthenticated,
   selectPhoneNumber,
 } from "@/features/auth/authSlice";
+import { useLogoutMutation } from "@/features/auth/authApi";
 import {
   addAddress,
   removeAddress,
@@ -48,11 +50,25 @@ export default function Profile() {
   const addresses = useAppSelector(selectAddresses);
   const phoneNumber = useAppSelector(selectPhoneNumber);
   const wishCount = useAppSelector(selectWishlistCount);
+  const [logoutReq] = useLogoutMutation();
+
+  /* Destroy the server session, then clear local auth regardless of the
+     network result — a failed logout call must never strand the user. */
+  const handleLogout = async () => {
+    try {
+      await logoutReq().unwrap();
+    } catch {
+      // ignore — clearing local state below is what actually signs them out
+    }
+    dispatch(logout());
+  };
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(profile);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editAddress, setEditAddress] = useState<SavedAddress | null>(null);
+
+  const backButton = <BackButton fallback="/" className="mb-4" />;
 
   if (!isAuthenticated) {
     return (
@@ -60,7 +76,10 @@ export default function Profile() {
         <Helmet>
           <title>Your Profile — ClothifyHer</title>
         </Helmet>
-        <div className="mx-auto flex max-w-sm flex-col items-center px-6 py-20 text-center">
+        <div className="mx-auto max-w-4xl px-4 pt-6 sm:px-6 lg:px-10">
+          {backButton}
+        </div>
+        <div className="mx-auto flex max-w-sm flex-col items-center px-6 pb-20 text-center">
           <span className="bg-maroon-50 grid h-20 w-20 place-items-center rounded-full">
             <Lock className="text-maroon-700 h-8 w-8" strokeWidth={1.5} />
           </span>
@@ -116,6 +135,8 @@ export default function Profile() {
       </Helmet>
 
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-10">
+        {backButton}
+
         {/* ── Identity ─────────────────────────────────────────────── */}
         <header className="flex items-center gap-4">
           <span className="bg-maroon-800 text-cream-100 grid h-16 w-16 shrink-0 place-items-center rounded-full font-serif text-xl">
@@ -135,7 +156,7 @@ export default function Profile() {
               it never squeezes the name. */}
           <button
             type="button"
-            onClick={() => dispatch(logout())}
+            onClick={handleLogout}
             aria-label="Sign out"
             className="ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-stone-300 px-3 text-sm font-semibold text-stone-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 sm:px-5"
           >

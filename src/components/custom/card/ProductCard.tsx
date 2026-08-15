@@ -16,7 +16,10 @@ export function ProductCard({
   onToggleWishlist,
 }: ProductCardProps) {
   return (
-    <Link to={`/products/${product.id}`} className="group block">
+    <Link
+      to={`/products/${product.slug ?? product.id}`}
+      className="group block"
+    >
       <div className="relative">
         <ProductCardMedia product={product} />
 
