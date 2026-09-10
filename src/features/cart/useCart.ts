@@ -63,8 +63,7 @@ export function useCart() {
     const threshold = config?.freeShippingThreshold ?? 0;
     const fee = config?.shippingFee ?? 0;
     // Free delivery is decided on the post-discount total, as placeOrder does.
-    const deliveryFee =
-      itemTotal === 0 || afterDiscount >= threshold ? 0 : fee;
+    const deliveryFee = itemTotal === 0 || afterDiscount >= threshold ? 0 : fee;
 
     return {
       itemTotal,
@@ -84,13 +83,15 @@ export function useCart() {
     dispatch(removeCoupon());
   }, [dispatch]);
 
-  /** Add a priced size×colour unit. Guests get the login dialog instead. */
+  /** Add a priced size×colour unit. Guests get the login dialog instead.
+      Returns the request so callers can await it (`.unwrap()`); `undefined`
+      for guests. */
   const add = (variantSizeId: string, quantity = 1) => {
     if (!isAuth) {
       dispatch(openLogin("cart"));
-      return;
+      return undefined;
     }
-    addServer({ variant_size_id: variantSizeId, quantity });
+    return addServer({ variant_size_id: variantSizeId, quantity });
   };
 
   const setQuantity = (line: CartLine, quantity: number) => {

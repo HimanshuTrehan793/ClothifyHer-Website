@@ -24,6 +24,7 @@ interface ApiVariantSize {
   price: number;
   mrp: number | null;
   max_order_quantity: number;
+  out_of_stock?: boolean;
   position: number;
 }
 
@@ -76,6 +77,11 @@ const toVariant = (v: ApiVariant, fallbackImage: string): ProductVariant => {
   const sizeRows = v.sizes ?? [];
   const firstImage = media.find((m) => m.type === "image");
   const cheapest = [...sizeRows].sort((a, b) => a.price - b.price)[0];
+  /* Sizes switched off one by one. A colour with *every* size off can't sell
+     anything, so it's treated exactly like a colour flagged out of stock. */
+  const oosSizes = orderedSizes(sizeRows.filter((s) => s.out_of_stock));
+  const allSizesOut =
+    sizeRows.length > 0 && sizeRows.every((s) => s.out_of_stock);
   return {
     id: v.id,
     color: v.color,
@@ -100,9 +106,11 @@ const toVariant = (v: ApiVariant, fallbackImage: string): ProductVariant => {
           price: s.price,
           mrp: money(s.mrp),
           maxOrderQuantity: s.max_order_quantity,
+          outOfStock: s.out_of_stock ?? false,
         }))
       : undefined,
-    outOfStock: v.out_of_stock,
+    outOfStock: v.out_of_stock || allSizesOut,
+    outOfStockSizes: oosSizes,
   };
 };
 

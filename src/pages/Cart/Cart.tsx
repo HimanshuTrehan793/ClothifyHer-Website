@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router";
-import { AlertTriangle, Heart, ShoppingBag, Tag, Truck, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Heart,
+  Plus,
+  ShoppingBag,
+  Tag,
+  Truck,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/bits/EmptyState";
 import { PriceTag } from "@/components/bits/PriceTag";
@@ -49,7 +57,11 @@ export default function Cart() {
      server's subtotal — drop it the moment the bag falls below that, so the
      summary can't promise a discount checkout would reject. */
   useEffect(() => {
-    if (coupon && totals.itemTotal > 0 && totals.itemTotal < coupon.minOrderValue) {
+    if (
+      coupon &&
+      totals.itemTotal > 0 &&
+      totals.itemTotal < coupon.minOrderValue
+    ) {
       clearCoupon();
       setCouponError(
         `${coupon.code} needs a minimum of ${formatPrice(coupon.minOrderValue)} — it's been removed.`,
@@ -208,19 +220,32 @@ export default function Cart() {
             {lines.map((line) => (
               <li
                 key={line.lineId}
-                className="relative flex gap-4 rounded-2xl bg-white p-3 shadow-sm sm:p-4"
+                className={cn(
+                  "relative flex gap-4 rounded-2xl p-3 shadow-sm sm:p-4",
+                  // Greyed row: reads as unavailable at a glance, while the
+                  // remove / save-for-later actions below stay full-strength.
+                  line.outOfStock ? "bg-stone-100" : "bg-white",
+                )}
               >
                 {/* PDP routes on slug, which the cart row carries. */}
                 <Link
                   to={`/products/${line.productSlug ?? line.productId}`}
-                  className="shrink-0"
+                  className="relative shrink-0"
                 >
                   <img
                     src={line.image}
                     alt={line.title}
                     loading="lazy"
-                    className="h-32 w-24 rounded-xl object-cover sm:h-36 sm:w-28"
+                    className={cn(
+                      "h-32 w-24 rounded-xl object-cover sm:h-36 sm:w-28",
+                      line.outOfStock && "opacity-50 grayscale",
+                    )}
                   />
+                  {line.outOfStock && (
+                    <span className="absolute inset-x-1.5 bottom-1.5 rounded-full bg-stone-900/85 py-1 text-center text-[10px] font-semibold tracking-wider text-white uppercase">
+                      Out of stock
+                    </span>
+                  )}
                 </Link>
 
                 <div className="flex min-w-0 flex-1 flex-col">
@@ -229,7 +254,10 @@ export default function Cart() {
                   </p>
                   <Link
                     to={`/products/${line.productSlug ?? line.productId}`}
-                    className="hover:text-maroon-800 line-clamp-2 pr-8 text-sm text-stone-800"
+                    className={cn(
+                      "hover:text-maroon-800 line-clamp-2 pr-8 text-sm",
+                      line.outOfStock ? "text-stone-500" : "text-stone-800",
+                    )}
                   >
                     {line.title}
                   </Link>
@@ -261,16 +289,19 @@ export default function Cart() {
                   <PriceTag
                     price={line.price}
                     mrp={line.mrp}
-                    className="mt-2"
+                    className={cn("mt-2", line.outOfStock && "opacity-50")}
                   />
 
                   <div className="mt-auto flex items-center justify-between gap-3 pt-3">
-                    <QuantityStepper
-                      quantity={line.quantity}
-                      label={line.title}
-                      max={line.maxQuantity}
-                      onChange={(quantity) => setQuantity(line, quantity)}
-                    />
+                    {/* No buying more of something that can't be bought. */}
+                    {!line.outOfStock && (
+                      <QuantityStepper
+                        quantity={line.quantity}
+                        label={line.title}
+                        max={line.maxQuantity}
+                        onChange={(quantity) => setQuantity(line, quantity)}
+                      />
+                    )}
 
                     {/* The cart row carries only a product snapshot, so the
                         wishlist gets that same snapshot — enough for its card. */}
@@ -290,7 +321,7 @@ export default function Cart() {
                         });
                         remove(line);
                       }}
-                      className="hover:text-maroon-800 inline-flex items-center gap-1.5 text-xs font-medium text-stone-500"
+                      className="hover:text-maroon-800 ml-auto inline-flex items-center gap-1.5 text-xs font-medium text-stone-500"
                     >
                       <Heart className="h-3.5 w-3.5" />
                       Save for later
@@ -435,6 +466,15 @@ export default function Cart() {
                     ? "Proceed to Checkout"
                     : "Sign in to Checkout"}
                 </button>
+
+                {/* Secondary to checkout — outlined so it never competes. */}
+                <Link
+                  to="/"
+                  className="border-maroon-800 text-maroon-800 hover:bg-maroon-50 mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-full border text-sm font-semibold transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add more items
+                </Link>
 
                 {hasOutOfStock && (
                   <p className="mt-3 text-center text-[11px] text-red-600">

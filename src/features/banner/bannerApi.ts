@@ -9,6 +9,7 @@ export type BannerPlacement = "hero" | "category" | "promo";
 interface ApiBanner {
   id: string;
   image: string;
+  mobile_image?: string | null;
   title: string | null;
   subtitle: string | null;
   cta_label: string | null;
@@ -21,6 +22,8 @@ interface ApiBanner {
 export interface Banner {
   id: string;
   image: string;
+  /** Portrait crop served under 768px; null → `image` is used everywhere. */
+  mobileImage: string | null;
   title: string | null;
   subtitle: string | null;
   ctaLabel: string | null;
@@ -32,6 +35,7 @@ export interface Banner {
 const toBanner = (b: ApiBanner): Banner => ({
   id: b.id,
   image: b.image,
+  mobileImage: b.mobile_image ?? null,
   title: b.title,
   subtitle: b.subtitle,
   ctaLabel: b.cta_label,
@@ -51,7 +55,11 @@ export const toHeroSlide = (b: Banner): HeroSlide => ({
   title: b.title ?? "",
   subtitle: b.subtitle ?? "",
   image: b.image,
-  primaryCta: { label: b.ctaLabel ?? "Shop Now", href: b.link ?? "/categories" },
+  mobileImage: b.mobileImage,
+  primaryCta: {
+    label: b.ctaLabel ?? "Shop Now",
+    href: b.link ?? "/categories",
+  },
 });
 
 /** Banner → occasion tile, for the `category`/`promo` placements. */
@@ -60,6 +68,7 @@ export const toOccasion = (b: Banner): Occasion => ({
   title: b.title ?? "",
   caption: b.subtitle ?? "",
   image: b.image,
+  mobileImage: b.mobileImage,
   href: b.link ?? "/categories",
 });
 

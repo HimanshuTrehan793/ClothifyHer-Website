@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { ArrowRight } from "lucide-react";
 import { ProductCard } from "@/components/custom/card/ProductCard";
+import { BannerImage } from "@/components/bits/BannerImage";
 import type { FeaturedCollectionData } from "@/interfaces/catalog";
 
 interface FeaturedCollectionProps {
@@ -23,10 +24,10 @@ export function FeaturedCollection({
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
         <div className="grid gap-6 lg:grid-cols-12">
           <div className="relative isolate overflow-hidden rounded-2xl lg:col-span-5">
-            <img
+            <BannerImage
               src={collection.image}
+              mobileSrc={collection.mobileImage}
               alt={collection.title}
-              loading="lazy"
               className="h-72 w-full object-cover sm:h-96 lg:h-full"
             />
             <span className="img-scrim pointer-events-none absolute inset-0" />

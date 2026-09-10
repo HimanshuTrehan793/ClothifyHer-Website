@@ -7,6 +7,7 @@ import { PriceTag } from "@/components/bits/PriceTag";
 import { SiteFooter } from "@/components/common/SiteFooter";
 import { BackButton } from "@/components/bits/BackButton";
 import { useWishlist } from "@/features/wishlist/useWishlist";
+import { isProductSoldOut } from "@/utils/stock";
 import type { Product } from "@/interfaces/catalog";
 
 export default function Wishlist() {
@@ -72,7 +73,9 @@ function WishlistCard({
      only ever stores the product — so "Move to Bag" goes to the PDP, where the
      size picker can resolve a real variant size. */
   const href = `/products/${product.slug ?? product.id}`;
-  const soldOut = product.sizes.length === 0;
+  // Same rule as the cards — honours the API's per-colour out_of_stock flag,
+  // which a bare `sizes.length === 0` check silently ignored.
+  const soldOut = isProductSoldOut(product);
 
   return (
     <li className="group">

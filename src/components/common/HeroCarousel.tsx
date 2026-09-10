@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { cn } from "@/lib/utils";
+import { BannerImage } from "@/components/bits/BannerImage";
 import type { HeroSlide } from "@/interfaces/catalog";
 
 const AUTOPLAY_MS = 6000;
@@ -36,8 +37,9 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
               i === index ? "opacity-100" : "pointer-events-none opacity-0",
             )}
           >
-            <img
+            <BannerImage
               src={slide.image}
+              mobileSrc={slide.mobileImage}
               alt=""
               /* The first slide is the LCP element — never lazy-load it. */
               loading={i === 0 ? "eager" : "lazy"}

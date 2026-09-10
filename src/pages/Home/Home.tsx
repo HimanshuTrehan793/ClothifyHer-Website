@@ -72,10 +72,7 @@ export default function Home() {
     [categories],
   );
 
-  const slides = useMemo(
-    () => heroBanners.map(toHeroSlide),
-    [heroBanners],
-  );
+  const slides = useMemo(() => heroBanners.map(toHeroSlide), [heroBanners]);
   const occasions = useMemo(
     () => occasionBanners.map(toOccasion),
     [occasionBanners],
@@ -99,8 +96,11 @@ export default function Home() {
   /* The editorial split needs both a promo banner for the story panel and
      products for the rail beside it — without either half it's not a section. */
   const promo = promoBanners[0];
-  const featuredProducts = (trending.data?.items ?? newArrivals.data?.items ?? [])
-    .slice(0, 3);
+  const featuredProducts = (
+    trending.data?.items ??
+    newArrivals.data?.items ??
+    []
+  ).slice(0, 3);
   const featured =
     promo && featuredProducts.length
       ? {
@@ -109,6 +109,7 @@ export default function Home() {
           title: promo.title ?? "",
           description: promo.subtitle ?? "",
           image: promo.image,
+          mobileImage: promo.mobileImage,
           href: promo.link ?? "/categories",
           ctaLabel: promo.ctaLabel ?? "Shop the edit",
           products: featuredProducts,

@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BannerImage } from "@/components/bits/BannerImage";
 import type { Occasion } from "@/interfaces/catalog";
 
 export function OccasionCard({ occasion }: { occasion: Occasion }) {
@@ -12,10 +13,10 @@ export function OccasionCard({ occasion }: { occasion: Occasion }) {
         occasion.wide ? "sm:col-span-2" : "sm:col-span-1",
       )}
     >
-      <img
+      <BannerImage
         src={occasion.image}
+        mobileSrc={occasion.mobileImage}
         alt={occasion.title}
-        loading="lazy"
         className={cn(
           "w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105",
           occasion.wide ? "h-56 sm:h-72" : "h-56 sm:h-72",

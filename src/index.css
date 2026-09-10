@@ -6,8 +6,31 @@ body,
 #root {
   min-height: 100svh;
   font-family: "Outfit", sans-serif;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+}
+
+/* ── Page scrollbar ─────────────────────────────────────────────────
+   Thin brand-maroon thumb on the page itself. Horizontal rails keep
+   `.hide-scrollbar`. `scrollbar-gutter: stable` reserves the track so
+   the page doesn't jump sideways when a Modal locks scrolling.        */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-maroon-300) transparent;
+  scrollbar-gutter: stable;
+}
+/* Safari (no `scrollbar-color` yet). Chrome/Firefox use the rules above
+   and ignore these. */
+html::-webkit-scrollbar {
+  width: 8px;
+}
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+html::-webkit-scrollbar-thumb {
+  background: var(--color-maroon-300);
+  border-radius: 9999px;
+}
+html::-webkit-scrollbar-thumb:hover {
+  background: var(--color-maroon-500);
 }
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));

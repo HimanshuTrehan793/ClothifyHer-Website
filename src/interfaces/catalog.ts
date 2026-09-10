@@ -12,6 +12,7 @@ export interface Occasion {
   title: string;
   caption: string;
   image: string;
+  mobileImage?: string | null;
   href: string;
   /** Tiles marked wide span two columns on desktop. */
   wide?: boolean;
@@ -44,8 +45,13 @@ export interface ProductVariant {
    * line, so anything with an add-to-bag button must read from here.
    */
   sizeRows?: VariantSize[];
-  /** The whole colourway is unavailable; every size is unbuyable. */
+  /**
+   * The whole colourway is unavailable — either flagged directly, or every one
+   * of its sizes is. Cards and the PDP both key off this.
+   */
   outOfStock?: boolean;
+  /** Size labels switched off individually within an in-stock colour. */
+  outOfStockSizes?: string[];
 }
 
 /** One priced size of a colourway — the unit the cart and orders key on. */
@@ -57,6 +63,7 @@ export interface VariantSize {
   mrp?: number;
   /** Per-order cap the cart clamps quantity to. */
   maxOrderQuantity: number;
+  outOfStock: boolean;
 }
 
 /** A catalog category as the app consumes it (normalized from the API). */
@@ -133,6 +140,8 @@ export interface HeroSlide {
   title: string;
   subtitle: string;
   image: string;
+  /** Portrait crop for screens under 768px; falls back to `image`. */
+  mobileImage?: string | null;
   primaryCta: { label: string; href: string };
   secondaryCta?: { label: string; href: string };
 }
@@ -143,6 +152,7 @@ export interface FeaturedCollectionData {
   title: string;
   description: string;
   image: string;
+  mobileImage?: string | null;
   href: string;
   ctaLabel: string;
   products: Product[];

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { skipToken } from "@reduxjs/toolkit/query/react";
 import { Helmet } from "react-helmet-async";
-import { Link, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { ChevronRight, Heart, PackageX, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Accordion } from "@/components/bits/Accordion";
@@ -14,10 +14,12 @@ import { ProductGallery } from "@/components/custom/ProductGallery";
 import { ProductCard } from "@/components/custom/card/ProductCard";
 import { SiteFooter } from "@/components/common/SiteFooter";
 import { SizeGuideDialog } from "@/components/dialog/SizeGuideDialog";
+import { ShareButton } from "@/components/dialog/ShareDialog";
 import { BackButton } from "@/components/bits/BackButton";
 import { useCart } from "@/features/cart/useCart";
 import { useWishlist } from "@/features/wishlist/useWishlist";
 import { galleryOf } from "@/utils/media";
+import { isProductSoldOut } from "@/utils/stock";
 import type { ProductVariant } from "@/interfaces/catalog";
 import {
   useGetProductBySlugQuery,
@@ -26,10 +28,13 @@ import {
 import { useGetConfigurationQuery } from "@/features/configuration/configurationApi";
 import { formatPrice } from "@/utils/format";
 
+const SELECT_SIZE_MSG = "Please select a size to continue.";
+
 export default function ProductDetail() {
   const { productId: param = "" } = useParams();
   const { ids: wishlistIds, toggle: toggleWishlist } = useWishlist();
   const { add, isAdding } = useCart();
+  const navigate = useNavigate();
 
   /* Products resolve by slug — `/products/:slug` is the canonical PDP route. */
   const { data: product, isLoading: loading } = useGetProductBySlugQuery(
@@ -49,7 +54,7 @@ export default function ProductDetail() {
 
   const [variantId, setVariantId] = useState<string | null>(null);
   const [size, setSize] = useState<string | null>(null);
-  const [sizeError, setSizeError] = useState(false);
+  const [sizeError, setSizeError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
 
@@ -58,7 +63,7 @@ export default function ProductDetail() {
   useEffect(() => {
     setVariantId(null);
     setSize(null);
-    setSizeError(false);
+    setSizeError(null);
     setAdded(false);
     window.scrollTo({ top: 0 });
   }, [param]);
@@ -101,26 +106,61 @@ export default function ProductDetail() {
   const sizes = variant?.sizes ?? product.sizes;
   // A colour flagged out of stock has no buyable size, whatever its rows say.
   const soldOut = sizes.length === 0 || variant?.outOfStock === true;
+  // Sizes switched off individually within an otherwise in-stock colour.
+  const oosSizes = new Set(variant?.outOfStockSizes ?? []);
+  // Every colour gone vs. just the one on screen — they need different copy.
+  const productSoldOut = isProductSoldOut(product);
   const wishlisted = wishlistIds.has(product.id);
 
-  const handleAddToCart = () => {
+  /** Validates the size pick and resolves it to its sellable row, or shows why not. */
+  const resolveRow = () => {
     // The single biggest conversion leak on mobile is a silent no-op here.
     if (!size) {
-      setSizeError(true);
+      setSizeError(SELECT_SIZE_MSG);
       document
         .getElementById("size-picker")
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
+      return null;
+    }
+    if (oosSizes.has(size)) {
+      setSizeError(`${size} is out of stock in this colour.`);
+      return null;
     }
     /* The cart keys on the priced size×colour unit, not on a size label —
        resolve the chosen size back to its VariantSize row. */
     const row = variant?.sizeRows?.find((s) => s.size === size);
     if (!row) {
-      setSizeError(true);
-      return;
+      setSizeError(SELECT_SIZE_MSG);
+      return null;
     }
+    return row;
+  };
+
+  const handleAddToCart = () => {
+    const row = resolveRow();
+    if (!row) return;
     add(row.id);
     setAdded(true);
+  };
+
+  /* Buy now = add this size (unless it's already in) and go straight to the
+     bag. Waits for the server so the cart never renders without the item. */
+  const handleBuyNow = async () => {
+    if (added) {
+      navigate("/cart");
+      return;
+    }
+    const row = resolveRow();
+    if (!row) return;
+    const pending = add(row.id);
+    if (!pending) return; // signed out — the login sheet is open instead
+    try {
+      await pending.unwrap();
+      setAdded(true);
+      navigate("/cart");
+    } catch {
+      /* The base query already toasted the server's reason; stay put. */
+    }
   };
 
   return (
@@ -163,12 +203,23 @@ export default function ProductDetail() {
 
           {/* ── Buy panel ───────────────────────────────────────────── */}
           <div>
-            <p className="text-[11px] font-semibold tracking-wider text-stone-400 uppercase">
-              {product.brand}
-            </p>
-            <h1 className="mt-1 font-serif text-3xl leading-tight text-stone-900">
-              {product.title}
-            </h1>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold tracking-wider text-stone-400 uppercase">
+                  {product.brand}
+                </p>
+                <h1 className="mt-1 font-serif text-3xl leading-tight text-stone-900">
+                  {product.title}
+                </h1>
+              </div>
+              {/* Canonical slug URL, not location.href — drops any query
+                  string or tracking params the visitor arrived with. */}
+              <ShareButton
+                title={product.title}
+                url={`${window.location.origin}/products/${product.slug ?? product.id}`}
+                className="-mt-1 -mr-2"
+              />
+            </div>
 
             {/* Plain text, not a link — there's no reviews section to jump to. */}
             {product.rating && (
@@ -181,11 +232,21 @@ export default function ProductDetail() {
               </p>
             )}
 
-            <PriceTag
-              price={price}
-              mrp={mrp}
-              className="mt-4 [&>span:first-child]:text-2xl"
-            />
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <PriceTag
+                price={price}
+                mrp={mrp}
+                className={cn(
+                  "[&>span:first-child]:text-2xl",
+                  soldOut && "opacity-50",
+                )}
+              />
+              {soldOut && (
+                <span className="rounded-full bg-stone-900/85 px-3 py-1 text-[11px] font-semibold tracking-wider text-white uppercase">
+                  {productSoldOut ? "Sold out" : "Sold out in this colour"}
+                </span>
+              )}
+            </div>
             <p className="mt-1 text-xs text-stone-400">
               Inclusive of all taxes
             </p>
@@ -199,7 +260,7 @@ export default function ProductDetail() {
                     setVariantId(v.id);
                     // Sizes can differ per colourway — never carry a stale pick.
                     setSize(null);
-                    setSizeError(false);
+                    setSizeError(null);
                     setAdded(false);
                   }}
                 />
@@ -223,7 +284,11 @@ export default function ProductDetail() {
 
               {soldOut ? (
                 <p className="mt-3 rounded-xl bg-stone-100 px-4 py-3 text-sm text-stone-500">
-                  Every size is sold out right now.
+                  {/* Only "pick another" when one exists — i.e. not every
+                      colour is gone, which implies the swatches are showing. */}
+                  {productSoldOut
+                    ? "Sold out in every colour and size right now."
+                    : "This colour is sold out — pick another colour above."}
                 </p>
               ) : (
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -233,15 +298,19 @@ export default function ProductDetail() {
                       type="button"
                       onClick={() => {
                         setSize(s);
-                        setSizeError(false);
+                        setSizeError(null);
                         setAdded(false);
                       }}
                       aria-pressed={size === s}
+                      disabled={oosSizes.has(s)}
+                      title={oosSizes.has(s) ? "Out of stock" : undefined}
                       className={cn(
                         "h-11 min-w-11 rounded-full border px-4 text-sm font-medium transition-colors",
-                        size === s
-                          ? "border-maroon-800 bg-maroon-800 text-white"
-                          : "hover:border-maroon-600 border-stone-300 text-stone-700",
+                        oosSizes.has(s)
+                          ? "cursor-not-allowed border-stone-200 text-stone-300 line-through"
+                          : size === s
+                            ? "border-maroon-800 bg-maroon-800 text-white"
+                            : "hover:border-maroon-600 border-stone-300 text-stone-700",
                       )}
                     >
                       {s}
@@ -254,7 +323,7 @@ export default function ProductDetail() {
                 aria-live="polite"
                 className="mt-2 min-h-5 text-sm text-red-600"
               >
-                {sizeError && "Please select a size to continue."}
+                {sizeError}
               </p>
             </div>
 
@@ -275,7 +344,7 @@ export default function ProductDetail() {
               >
                 <ShoppingBag className="h-4 w-4" />
                 {soldOut
-                  ? "Sold Out"
+                  ? "Sold out"
                   : isAdding
                     ? "Adding…"
                     : added
@@ -301,13 +370,15 @@ export default function ProductDetail() {
               </button>
             </div>
 
-            {added && (
-              <Link
-                to="/cart"
-                className="text-maroon-700 mt-3 inline-block text-sm font-medium underline underline-offset-2"
+            {!soldOut && (
+              <button
+                type="button"
+                onClick={handleBuyNow}
+                disabled={isAdding}
+                className="border-maroon-800 text-maroon-800 hover:bg-maroon-50 mt-3 inline-flex h-13 w-full items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors disabled:opacity-60"
               >
-                Go to bag →
-              </Link>
+                Buy now
+              </button>
             )}
 
             {/* Details */}
@@ -355,17 +426,17 @@ export default function ProductDetail() {
       {/* ── Similar ────────────────────────────────────────────────── */}
       {similar.length > 0 && (
         <section className="py-12">
-        <SectionHeading title="You May Also Like" />
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-4 gap-y-8 px-4 sm:px-6 md:grid-cols-4 lg:px-10">
-          {similar.map((p) => (
-            <ProductCard
-              key={p.id}
-              product={p}
-              wishlisted={wishlistIds.has(p.id)}
-              onToggleWishlist={() => toggleWishlist(p)}
-            />
-          ))}
-        </div>
+          <SectionHeading title="You May Also Like" />
+          <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-4 gap-y-8 px-4 sm:px-6 md:grid-cols-4 lg:px-10">
+            {similar.map((p) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                wishlisted={wishlistIds.has(p.id)}
+                onToggleWishlist={() => toggleWishlist(p)}
+              />
+            ))}
+          </div>
         </section>
       )}
 
@@ -382,15 +453,15 @@ export default function ProductDetail() {
             <p className="truncate text-xs text-stone-500">{product.title}</p>
             <PriceTag price={price} mrp={mrp} />
           </div>
+          {/* Once it's in the bag, the next step is checkout — not a dead
+              "Added" state. */}
           <button
             type="button"
-            onClick={handleAddToCart}
-            className={cn(
-              "h-11 shrink-0 rounded-full px-6 text-sm font-semibold text-white transition-colors",
-              added ? "bg-green-700" : "bg-maroon-800",
-            )}
+            onClick={added ? handleBuyNow : handleAddToCart}
+            disabled={isAdding}
+            className="bg-maroon-800 h-11 shrink-0 rounded-full px-6 text-sm font-semibold text-white transition-colors disabled:opacity-60"
           >
-            {added ? "Added" : "Add to Bag"}
+            {added ? "Buy now" : "Add to Bag"}
           </button>
         </div>
       )}
@@ -402,8 +473,14 @@ export default function ProductDetail() {
         selectedSize={size}
         onConfirm={(picked) => {
           // Picking in the chart is a size choice — apply it and close.
+          if (oosSizes.has(picked)) {
+            setSize(null);
+            setSizeError(`${picked} is out of stock in this colour.`);
+            setGuideOpen(false);
+            return;
+          }
           setSize(picked);
-          setSizeError(false);
+          setSizeError(null);
           setAdded(false);
           setGuideOpen(false);
         }}
