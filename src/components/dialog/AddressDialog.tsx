@@ -26,6 +26,8 @@ interface AddressDialogProps {
   open: boolean;
   /** Present when editing; absent when adding. */
   address: SavedAddress | null;
+  /** Fields carried over from the map picker when adding a new address. */
+  prefill?: Partial<SavedAddress> | null;
   onClose: () => void;
   onSave: (address: SavedAddress) => void;
 }
@@ -33,6 +35,7 @@ interface AddressDialogProps {
 export function AddressDialog({
   open,
   address,
+  prefill,
   onClose,
   onSave,
 }: AddressDialogProps) {
@@ -42,9 +45,10 @@ export function AddressDialog({
   // Reload whenever the dialog opens so a cancelled edit never leaks through.
   useEffect(() => {
     if (!open) return;
-    setForm(address ?? blank());
+    // Editing wins; otherwise start from whatever the map resolved.
+    setForm(address ?? { ...blank(), ...(prefill ?? {}) });
     setErrors({});
-  }, [open, address]);
+  }, [open, address, prefill]);
 
   const set = (key: keyof SavedAddress, value: string | boolean) =>
     setForm((f) => ({ ...f, [key]: value }));

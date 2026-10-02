@@ -15,6 +15,8 @@ import {
 import { cn } from "@/lib/utils";
 import { BackButton } from "@/components/bits/BackButton";
 import { AddressDialog } from "@/components/dialog/AddressDialog";
+import { AddressMapDialog } from "@/components/dialog/AddressMapDialog";
+import { getLocationPermission } from "@/utils/geolocation";
 import { SiteFooter } from "@/components/common/SiteFooter";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import {
@@ -76,6 +78,8 @@ export default function Profile() {
   const [draft, setDraft] = useState(profile);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editAddress, setEditAddress] = useState<SavedAddress | null>(null);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [prefill, setPrefill] = useState<Partial<SavedAddress> | null>(null);
 
   const backButton = <BackButton fallback="/" className="mb-4" />;
 
@@ -125,9 +129,22 @@ export default function Profile() {
     setEditing(false);
   };
 
-  const openAdd = () => {
+  /* Location off → the map can't centre on them and they'd be dragging from a
+     default city, so go straight to the form. */
+  const startAddAddress = async () => {
+    setPrefill(null);
+    if ((await getLocationPermission()) === "denied") {
+      setDialogOpen(true);
+      return;
+    }
+    setMapOpen(true);
+  };
+
+  // New addresses start on the map; editing an existing one goes straight
+  // to the form, since its pin is already set.
+  const openAdd = async () => {
     setEditAddress(null);
-    setDialogOpen(true);
+    await startAddAddress();
   };
 
   const openEdit = (address: SavedAddress) => {
@@ -417,9 +434,25 @@ export default function Profile() {
 
       <SiteFooter />
 
+      <AddressMapDialog
+        open={mapOpen}
+        onClose={() => setMapOpen(false)}
+        onConfirm={(fields) => {
+          setPrefill(fields);
+          setMapOpen(false);
+          setDialogOpen(true);
+        }}
+        onSkip={() => {
+          setPrefill(null);
+          setMapOpen(false);
+          setDialogOpen(true);
+        }}
+      />
+
       <AddressDialog
         open={dialogOpen}
         address={editAddress}
+        prefill={prefill}
         onClose={() => setDialogOpen(false)}
         onSave={(address) => {
           /* The dialog mints a client-side id for new rows; the server assigns

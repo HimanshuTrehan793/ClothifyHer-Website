@@ -6,6 +6,7 @@ import { LoginDialog } from "@/components/dialog/LoginDialog";
 import { ErrorBoundary } from "@/components/error/ErrorBoundary";
 import Home from "@/pages/Home/Home";
 import Cart from "@/pages/Cart/Cart";
+import Checkout from "@/pages/Checkout/Checkout";
 import Wishlist from "@/pages/Wishlist/Wishlist";
 import ProductDetail from "@/pages/ProductDetail/ProductDetail";
 import AllCategories from "@/pages/Categories/AllCategories";
@@ -33,6 +34,7 @@ function App() {
             <Route path="/products/:productId" element={<ProductDetail />} />
             <Route path="/search" element={<Search />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/orders" element={<Orders />} />

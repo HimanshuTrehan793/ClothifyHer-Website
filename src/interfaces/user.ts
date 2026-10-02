@@ -26,4 +26,7 @@ export interface SavedAddress {
   pincode: string;
   /** Exactly one address carries this at a time. */
   isDefault: boolean;
+  /** Map pin, set when the address was picked on the map. */
+  lat?: number | null;
+  lng?: number | null;
 }

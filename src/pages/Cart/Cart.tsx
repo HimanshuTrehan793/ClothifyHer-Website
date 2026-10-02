@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   AlertTriangle,
   Heart,
@@ -30,6 +30,7 @@ import { formatPrice } from "@/utils/format";
 
 export default function Cart() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const {
     lines,
     totals,
@@ -94,7 +95,7 @@ export default function Cart() {
   const checkout = () => {
     // Checkout is the one flow that genuinely requires an account.
     if (!isAuthenticated) dispatch(openLogin("checkout"));
-    else console.info("TODO: navigate to /checkout once the screen exists");
+    else navigate("/checkout");
   };
 
   // The bag is tied to the account, so a signed-out visitor is gated here —

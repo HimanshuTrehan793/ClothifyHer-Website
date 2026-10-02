@@ -15,13 +15,23 @@ interface ApiAddress {
   pincode: string;
   type: "home" | "work" | "other";
   is_default: boolean;
+  lat: number | null;
+  lng: number | null;
 }
+
+/* The API speaks E.164 (+919876543210); the form speaks 10 digits. Converting
+   here keeps every caller — checkout and profile — on the plain number. */
+const toE164 = (phone: string) => {
+  const digits = phone.replace(/\D/g, "").slice(-10);
+  return `+91${digits}`;
+};
+const fromE164 = (phone: string) => phone.replace(/\D/g, "").slice(-10);
 
 const toAddress = (a: ApiAddress): SavedAddress => ({
   id: a.id,
   type: a.type,
   name: a.name,
-  phone: a.phone_number,
+  phone: fromE164(a.phone_number),
   line1: a.address_line1,
   line2: a.address_line2 ?? undefined,
   landmark: a.landmark ?? undefined,
@@ -29,12 +39,14 @@ const toAddress = (a: ApiAddress): SavedAddress => ({
   state: a.state,
   pincode: a.pincode,
   isDefault: a.is_default,
+  lat: a.lat,
+  lng: a.lng,
 });
 
 /** App-side address → the create/update body the API validates. */
 const toApiBody = (a: Partial<SavedAddress>) => ({
   ...(a.name !== undefined ? { name: a.name } : {}),
-  ...(a.phone !== undefined ? { phone_number: a.phone } : {}),
+  ...(a.phone !== undefined ? { phone_number: toE164(a.phone) } : {}),
   ...(a.line1 !== undefined ? { address_line1: a.line1 } : {}),
   ...(a.line2 !== undefined ? { address_line2: a.line2 || null } : {}),
   ...(a.landmark !== undefined ? { landmark: a.landmark || null } : {}),
@@ -43,6 +55,8 @@ const toApiBody = (a: Partial<SavedAddress>) => ({
   ...(a.pincode !== undefined ? { pincode: a.pincode } : {}),
   ...(a.type !== undefined ? { type: a.type } : {}),
   ...(a.isDefault !== undefined ? { is_default: a.isDefault } : {}),
+  ...(a.lat !== undefined ? { lat: a.lat } : {}),
+  ...(a.lng !== undefined ? { lng: a.lng } : {}),
 });
 
 export const addressApi = baseApi.injectEndpoints({

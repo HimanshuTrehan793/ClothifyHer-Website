@@ -1,5 +1,6 @@
 import { AnnouncementBar } from "@/components/navigation/AnnouncementBar";
 import { TopNavBar } from "@/components/navigation/TopNavBar";
+import { WhatsAppButton } from "@/components/common/WhatsAppButton";
 import type { LayoutProps } from "@/interfaces/navigation";
 
 export function MainLayout({ children }: LayoutProps) {
@@ -10,6 +11,9 @@ export function MainLayout({ children }: LayoutProps) {
       <TopNavBar />
 
       <main className="flex-1">{children}</main>
+
+      {/* Every page — support is the one thing people hunt for on any screen. */}
+      <WhatsAppButton />
     </div>
   );
 }

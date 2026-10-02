@@ -1,4 +1,5 @@
 import { baseApi } from "@/api/baseApi";
+import type { RazorpayPaymentResponse } from "@/interfaces/razorpay";
 import type { ApiSuccess, PaginationMeta } from "@/api/types";
 import type {
   Order,
@@ -118,7 +119,10 @@ export const toOrder = (o: ApiOrder): Order => {
       : undefined,
     itemTotal: o.subtotal,
     // The API stores no MRP total; sum the snapshots so "you saved" still works.
-    itemMrpTotal: items.reduce((n, i) => n + (i.mrp ?? i.price) * i.quantity, 0),
+    itemMrpTotal: items.reduce(
+      (n, i) => n + (i.mrp ?? i.price) * i.quantity,
+      0,
+    ),
     couponDiscount: o.discount,
     couponCode: o.coupon_code ?? undefined,
     deliveryFee: o.shipping_fee,
@@ -192,13 +196,31 @@ export const orderApi = baseApi.injectEndpoints({
     placeOrder: build.mutation<PlaceOrderResult, PlaceOrderArgs>({
       query: (body) => ({ url: "/api/orders", method: "POST", data: body }),
       transformResponse: (
-        res: ApiSuccess<{ order: ApiOrder; razorpay?: PlaceOrderResult["razorpay"] }>,
+        res: ApiSuccess<{
+          order: ApiOrder;
+          razorpay?: PlaceOrderResult["razorpay"];
+        }>,
       ) => ({
         order: toOrder(res.data.order),
         razorpay: res.data.razorpay,
       }),
       /* COD clears the cart server-side; online clears it on payment. Drop both
          caches either way so the bag badge can't show a stale count. */
+      invalidatesTags: [
+        { type: "Order", id: "LIST" },
+        { type: "Cart", id: "LIST" },
+      ],
+    }),
+
+    /* Checkout callback. The webhook is the authoritative backstop server-side;
+       this is what turns the buyer's screen green straight after paying. */
+    verifyPayment: build.mutation<{ verified: true }, RazorpayPaymentResponse>({
+      query: (body) => ({
+        url: "/api/payments/verify",
+        method: "POST",
+        data: body,
+      }),
+      transformResponse: () => ({ verified: true as const }),
       invalidatesTags: [
         { type: "Order", id: "LIST" },
         { type: "Cart", id: "LIST" },
@@ -223,4 +245,5 @@ export const {
   useGetOrderByIdQuery,
   usePlaceOrderMutation,
   useCancelOrderMutation,
+  useVerifyPaymentMutation,
 } = orderApi;
