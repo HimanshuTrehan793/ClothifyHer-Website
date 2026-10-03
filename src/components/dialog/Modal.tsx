@@ -98,7 +98,11 @@ export function Modal({
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "bg-cream-50 relative w-full max-w-md animate-[fadeIn_250ms_ease-out] rounded-t-3xl p-6 shadow-xl sm:rounded-3xl sm:p-8",
+          /* Body scroll is locked while this is open, so a form taller than the
+             screen has to scroll inside the panel — otherwise its Save button
+             is unreachable on a phone. `svh` tracks the mobile URL bar, and
+             `overscroll-contain` stops the page behind scrolling instead. */
+          "bg-cream-50 relative max-h-[90svh] w-full max-w-md animate-[fadeIn_250ms_ease-out] overflow-y-auto overscroll-contain rounded-t-3xl p-6 shadow-xl sm:rounded-3xl sm:p-8",
           className,
         )}
       >
