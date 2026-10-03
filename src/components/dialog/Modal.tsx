@@ -45,7 +45,7 @@ export function Modal({
     restoreRef.current = document.activeElement as HTMLElement;
     document.body.style.overflow = "hidden";
 
-    // Focus the first meaningful control once the panel is mounted.
+    // Focus the first meaningful control once
     const raf = requestAnimationFrame(() => {
       const first = panelRef.current?.querySelector<HTMLElement>(FOCUSABLE);
       first?.focus();
