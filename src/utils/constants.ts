@@ -1,6 +1,17 @@
 export const APP_NAME = "ClothifyHer";
 export const SITE_URL = "https://clothifyher.in";
 
+/* Shared product links point at the backend's `/s/<slug>` route, which serves
+   per-product Open Graph tags so WhatsApp shows the product's own photo — the
+   storefront's tags are written by JavaScript, which link crawlers never run.
+   Set VITE_SHARE_BASE_URL to a domain that proxies /s/* if you'd rather the
+   shared URL read clothifyher.in. */
+export const SHARE_BASE_URL = (
+  (import.meta.env.VITE_SHARE_BASE_URL as string | undefined) ??
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
+  SITE_URL
+).replace(/\/$/, "");
+
 export const ACCESS_TOKEN_KEY = "accessToken";
 export const CART_STORAGE_KEY = "clothifyher.cart";
 export const WISHLIST_STORAGE_KEY = "clothifyher.wishlist";

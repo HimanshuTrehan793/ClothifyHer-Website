@@ -20,6 +20,7 @@ import { useCart } from "@/features/cart/useCart";
 import { useWishlist } from "@/features/wishlist/useWishlist";
 import { galleryOf } from "@/utils/media";
 import { isProductSoldOut } from "@/utils/stock";
+import { SHARE_BASE_URL } from "@/utils/constants";
 import type { ProductVariant } from "@/interfaces/catalog";
 import {
   useGetProductBySlugQuery,
@@ -212,11 +213,12 @@ export default function ProductDetail() {
                   {product.title}
                 </h1>
               </div>
-              {/* Canonical slug URL, not location.href — drops any query
-                  string or tracking params the visitor arrived with. */}
+              {/* The /s/ link previews with the product's own photo, then
+                  redirects to this page. Canonical slug, so no tracking
+                  params from the visitor's own URL ride along. */}
               <ShareButton
                 title={product.title}
-                url={`${window.location.origin}/products/${product.slug ?? product.id}`}
+                url={`${SHARE_BASE_URL}/s/${product.slug ?? product.id}`}
                 className="-mt-1 -mr-2"
               />
             </div>
