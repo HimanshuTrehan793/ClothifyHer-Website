@@ -9,4 +9,4 @@ Disallow: /payment-page
 Disallow: /order-success
 Disallow: /order-failure
 
-Sitemap: https://clothifyher.com/sitemap.xml
+Sitemap: https://clothifyher.in/sitemap.xml

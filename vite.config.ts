@@ -4,7 +4,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import Sitemap from "vite-plugin-sitemap";
 
-const SITE_URL = process.env.SITE_URL || "https://clothifyher.com";
+const SITE_URL = process.env.SITE_URL || "https://clothifyher.in";
 
 // Public, indexable static routes from src/App.tsx.
 // Cart / Orders / Profile / Address / Payment are user-specific (excluded below).

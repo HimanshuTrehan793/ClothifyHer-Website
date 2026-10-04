@@ -1,5 +1,5 @@
 export const APP_NAME = "ClothifyHer";
-export const SITE_URL = "https://clothifyher.com";
+export const SITE_URL = "https://clothifyher.in";
 
 export const ACCESS_TOKEN_KEY = "accessToken";
 export const CART_STORAGE_KEY = "clothifyher.cart";
