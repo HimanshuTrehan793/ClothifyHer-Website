@@ -7,6 +7,10 @@ import { ErrorBoundary } from "@/components/error/ErrorBoundary";
 import Home from "@/pages/Home/Home";
 import Cart from "@/pages/Cart/Cart";
 import Checkout from "@/pages/Checkout/Checkout";
+import About from "@/pages/Info/About";
+import Faq from "@/pages/Info/Faq";
+import Terms from "@/pages/Info/Terms";
+import Privacy from "@/pages/Info/Privacy";
 import Wishlist from "@/pages/Wishlist/Wishlist";
 import ProductDetail from "@/pages/ProductDetail/ProductDetail";
 import AllCategories from "@/pages/Categories/AllCategories";
@@ -39,6 +43,10 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/orders/:orderId" element={<OrderDetail />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/faq" element={<Faq />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
           </Routes>
         </ErrorBoundary>
       </MainLayout>

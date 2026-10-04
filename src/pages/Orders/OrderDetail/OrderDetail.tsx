@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router";
 import {
   ChevronRight,
+  Download,
   HeadphonesIcon,
   MapPin,
   PackageX,
@@ -15,6 +17,9 @@ import { PriceTag } from "@/components/bits/PriceTag";
 import { OrderTimeline } from "@/components/custom/OrderTimeline";
 import { SiteFooter } from "@/components/common/SiteFooter";
 import { BackButton } from "@/components/bits/BackButton";
+import { ContactDialog } from "@/components/dialog/ContactDialog";
+import { downloadInvoice } from "@/utils/downloadInvoice";
+import { toast } from "sonner";
 import { formatDate, formatPrice } from "@/utils/format";
 import {
   useCancelOrderMutation,
@@ -40,13 +45,24 @@ export default function OrderDetail() {
   const [cancelOrder, { isLoading: cancelling }] = useCancelOrderMutation();
   const { data: config } = useGetConfigurationQuery();
 
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [invoicing, setInvoicing] = useState(false);
+
   /* Support details are store config, so the button only shows when one is set
      — a "Need help?" that goes nowhere is worse than no button. */
-  const support = config?.supportPhone
-    ? { href: `tel:${config.supportPhone}` }
-    : config?.supportEmail
-      ? { href: `mailto:${config.supportEmail}` }
-      : null;
+  const hasSupport = !!(config?.supportPhone || config?.supportEmail);
+
+  const getInvoice = async () => {
+    if (!order) return;
+    setInvoicing(true);
+    try {
+      await downloadInvoice(order.id, order.orderNumber);
+    } catch {
+      toast.error("Couldn't download the invoice. Please try again.");
+    } finally {
+      setInvoicing(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -304,15 +320,30 @@ export default function OrderDetail() {
             </section>
 
             <div className="space-y-2">
+              {/* Delivered orders are the ones people want a receipt for —
+                  though the endpoint serves any of their own orders. */}
+              {order.status === "delivered" && (
+                <button
+                  type="button"
+                  onClick={getInvoice}
+                  disabled={invoicing}
+                  className="hover:border-maroon-600 hover:text-maroon-800 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-stone-300 text-sm font-semibold text-stone-700 transition-colors disabled:opacity-50"
+                >
+                  <Download className="h-4 w-4" />
+                  {invoicing ? "Preparing…" : "Invoice"}
+                </button>
+              )}
+
               {/* Support contact comes from store configuration. */}
-              {support && (
-                <a
-                  href={support.href}
+              {hasSupport && (
+                <button
+                  type="button"
+                  onClick={() => setHelpOpen(true)}
                   className="hover:border-maroon-600 hover:text-maroon-800 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-stone-300 text-sm font-semibold text-stone-700 transition-colors"
                 >
                   <HeadphonesIcon className="h-4 w-4" />
                   Need Help?
-                </a>
+                </button>
               )}
               {cancellable && (
                 <button
@@ -320,9 +351,7 @@ export default function OrderDetail() {
                   disabled={cancelling}
                   onClick={() => {
                     if (
-                      window.confirm(
-                        "Cancel this order? This can't be undone.",
-                      )
+                      window.confirm("Cancel this order? This can't be undone.")
                     ) {
                       cancelOrder(order.id);
                     }
@@ -339,6 +368,13 @@ export default function OrderDetail() {
       </div>
 
       <SiteFooter />
+
+      <ContactDialog
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        email={config?.supportEmail}
+        phone={config?.supportPhone}
+      />
     </>
   );
 }
