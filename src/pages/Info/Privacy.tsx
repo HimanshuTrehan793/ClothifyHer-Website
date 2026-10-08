@@ -35,6 +35,17 @@ export default function Privacy() {
         </p>
       </Section>
 
+      <Section heading="Cookies and analytics">
+        <p>
+          We use Google Analytics to understand how the site is used — which
+          pages people visit and how they move through the shop. It sets cookies
+          and records your approximate location and device type. We see this as
+          aggregate traffic, not as a record of you by name. Your browser's
+          settings, or any content blocker, can refuse it; the shop works
+          exactly the same either way.
+        </p>
+      </Section>
+
       <Section heading="Payment information">
         <p>
           We store the payment method and status of an order, never your card
