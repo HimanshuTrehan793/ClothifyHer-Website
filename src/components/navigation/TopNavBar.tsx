@@ -15,7 +15,12 @@ import { PRIMARY_NAV, type PrimaryNavItem } from "@/config/navigation";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { useCart } from "@/features/cart/useCart";
 import { useWishlist } from "@/features/wishlist/useWishlist";
-import { openLogin, selectIsAuthenticated } from "@/features/auth/authSlice";
+import {
+  openLogin,
+  selectIsAuthenticated,
+  selectPhoneNumber,
+} from "@/features/auth/authSlice";
+import { selectProfile } from "@/features/user/userSlice";
 
 export function TopNavBar() {
   const dispatch = useAppDispatch();
@@ -281,6 +286,14 @@ function MobileDrawer({
   onLogin: () => void;
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const profile = useAppSelector(selectProfile);
+  const phone = useAppSelector(selectPhoneNumber);
+
+  /* The profile is optional — someone can sign in with a number and never fill
+     in a name, so fall back rather than showing an empty row. */
+  const displayName = profile?.fullName?.trim() || "Your account";
+  const initial = (profile?.fullName?.trim() || "C").charAt(0).toUpperCase();
 
   return (
     <div
@@ -370,13 +383,35 @@ function MobileDrawer({
         </nav>
 
         <div className="border-maroon-100 shrink-0 border-t p-5">
-          <button
-            type="button"
-            onClick={onLogin}
-            className="bg-maroon-800 w-full rounded-full py-3 text-center text-sm font-semibold text-white"
-          >
-            Login / Sign up
-          </button>
+          {/* Signed in → who you are, tapping through to the account. The old
+              version always said "Login / Sign up", even after signing in. */}
+          {isAuthenticated ? (
+            <Link
+              to="/profile"
+              onClick={onClose}
+              className="hover:bg-maroon-50 flex items-center gap-3 rounded-2xl px-2 py-2 transition-colors"
+            >
+              <span className="bg-maroon-800 text-cream-50 grid h-10 w-10 shrink-0 place-items-center rounded-full font-serif text-base">
+                {initial}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold text-stone-900">
+                  {displayName}
+                </span>
+                <span className="block truncate text-xs text-stone-500">
+                  {phone ? phone : "View your account"}
+                </span>
+              </span>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={onLogin}
+              className="bg-maroon-800 w-full rounded-full py-3 text-center text-sm font-semibold text-white"
+            >
+              Login / Sign up
+            </button>
+          )}
         </div>
       </aside>
     </div>
