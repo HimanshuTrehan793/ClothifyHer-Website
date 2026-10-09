@@ -149,13 +149,18 @@ export default function OrderDetail() {
             </p>
           </div>
         )}
-        {/* An unpaid Razorpay order sits in `pending` until the webhook lands. */}
+        {/* `pending` covers two different waits: an online order whose payment
+            hasn't landed, and any order the store hasn't accepted yet. Saying
+            "waiting for your payment" to someone who has paid reads as a
+            problem with their money. */}
         {order.status === "pending" && (
           <div className="mt-5 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
             <XCircle className="h-5 w-5 shrink-0 text-amber-700" />
             <p className="text-sm text-amber-900">
-              We're waiting for your payment to confirm. This updates
-              automatically once it clears.
+              {order.paymentMethod === "razorpay" &&
+              order.payment?.status !== "paid"
+                ? "We're waiting for your payment to confirm. This updates automatically once it clears."
+                : "We've got your order and will confirm it shortly."}
             </p>
           </div>
         )}
