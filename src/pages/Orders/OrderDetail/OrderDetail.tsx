@@ -20,7 +20,7 @@ import { BackButton } from "@/components/bits/BackButton";
 import { ContactDialog } from "@/components/dialog/ContactDialog";
 import { downloadInvoice } from "@/utils/downloadInvoice";
 import { toast } from "sonner";
-import { formatDate, formatPrice } from "@/utils/format";
+import { formatDate, formatPhone, formatPrice } from "@/utils/format";
 import {
   useCancelOrderMutation,
   useGetOrderByIdQuery,
@@ -271,7 +271,7 @@ export default function OrderDetail() {
                   {order.address.city}, {order.address.state}{" "}
                   {order.address.pincode}
                   <br />
-                  {order.address.phone}
+                  {formatPhone(order.address.phone)}
                 </address>
               </section>
             )}

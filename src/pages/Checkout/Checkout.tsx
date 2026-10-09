@@ -22,7 +22,7 @@ import {
   type PlaceOrderArgs,
 } from "@/features/orders/orderApi";
 import { loadRazorpay } from "@/utils/razorpay";
-import { formatPrice } from "@/utils/format";
+import { formatPhone, formatPrice } from "@/utils/format";
 import type { SavedAddress } from "@/interfaces/user";
 
 type PaymentMethod = PlaceOrderArgs["payment_method"];
@@ -282,7 +282,7 @@ export default function Checkout() {
                             {a.city}, {a.state} {a.pincode}
                           </span>
                           <span className="mt-0.5 block text-stone-500">
-                            {a.phone}
+                            {formatPhone(a.phone)}
                           </span>
                         </span>
                       </label>

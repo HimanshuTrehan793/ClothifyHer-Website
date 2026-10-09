@@ -13,6 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatPhone } from "@/utils/format";
 import { BackButton } from "@/components/bits/BackButton";
 import { AddressDialog } from "@/components/dialog/AddressDialog";
 import { AddressMapDialog } from "@/components/dialog/AddressMapDialog";
@@ -173,7 +174,7 @@ export default function Profile() {
               {profile.fullName || "Your Profile"}
             </h1>
             <p className="mt-0.5 truncate text-sm text-stone-500">
-              +91 {phoneNumber ?? profile.phoneNumber}
+              {formatPhone(phoneNumber ?? profile.phoneNumber)}
               {profile.email && ` · ${profile.email}`}
             </p>
           </div>
@@ -296,12 +297,12 @@ export default function Profile() {
               </div>
             </form>
           ) : (
-            <dl className="mt-4 grid grid-cols-2 gap-y-4 text-sm">
+            <dl className="mt-4 grid grid-cols-1 gap-y-4 text-sm sm:grid-cols-2">
               <Detail label="Full name" value={profile.fullName} />
               <Detail label="Email" value={profile.email} />
               <Detail
                 label="Mobile"
-                value={`+91 ${phoneNumber ?? profile.phoneNumber}`}
+                value={formatPhone(phoneNumber ?? profile.phoneNumber)}
               />
               <Detail
                 label="Gender"
@@ -395,7 +396,7 @@ export default function Profile() {
                     <br />
                     {address.city}, {address.state} {address.pincode}
                     <br />
-                    +91 {address.phone}
+                    {formatPhone(address.phone)}
                   </address>
 
                   <div className="mt-4 flex items-center gap-4 border-t border-stone-100 pt-3 text-xs font-medium">
@@ -501,9 +502,12 @@ function QuickLink({
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    /* `min-w-0` lets the cell shrink inside the grid, and `break-words` wraps
+       a long unbroken value (an email has no spaces to break at) instead of
+       spilling past the card. */
+    <div className="min-w-0">
       <dt className="text-xs text-stone-400">{label}</dt>
-      <dd className="mt-0.5 text-stone-800">{value || "—"}</dd>
+      <dd className="mt-0.5 break-words text-stone-800">{value || "—"}</dd>
     </div>
   );
 }
