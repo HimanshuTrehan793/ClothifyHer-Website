@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { Modal } from "./Modal";
 import { Logo } from "@/components/bits/Logo";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,6 @@ import {
   useVerifyOtpMutation,
 } from "@/features/auth/authApi";
 import {
-  DEV_OTP,
   OTP_LENGTH,
   OTP_MAX_ATTEMPTS,
   OTP_RESEND_SECONDS,
@@ -257,16 +256,6 @@ export function LoginDialog() {
               {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend OTP"}
             </button>
           </div>
-
-          {/* The backend's DEV_OTP_CODE shortcut is a local convenience —
-              never advertise a working code on a production build. */}
-          {import.meta.env.DEV && (
-            <p className="bg-maroon-50 mt-5 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-[11px] text-stone-500">
-              <ShieldCheck className="text-maroon-700 h-3.5 w-3.5" />
-              Dev build — use code{" "}
-              <strong className="font-semibold">{DEV_OTP}</strong>
-            </p>
-          )}
         </div>
       )}
     </Modal>
