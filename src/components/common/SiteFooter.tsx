@@ -1,18 +1,32 @@
 import { Link } from "react-router";
-import { Facebook, Instagram, Mail, MapPin, Phone } from "lucide-react";
+import {
+  Facebook,
+  Instagram,
+  Mail,
+  MapPin,
+  Phone,
+  Youtube,
+} from "lucide-react";
 import { Logo } from "@/components/bits/Logo";
 import { BUSINESS } from "@/config/business";
 
+/* Tracking params from the QR/share links (stkn, utm_source, si) are stripped
+   — they're per-share tokens, not part of the profile address. */
 const SOCIALS = [
   {
     label: "Instagram",
-    href: "https://instagram.com/clothifyher",
+    href: "https://www.instagram.com/clothifyher.in",
     icon: Instagram,
   },
   {
     label: "Facebook",
-    href: "https://facebook.com/clothifyher",
+    href: "https://www.facebook.com/profile.php?id=61590692143280",
     icon: Facebook,
+  },
+  {
+    label: "YouTube",
+    href: "https://www.youtube.com/@clothifyher",
+    icon: Youtube,
   },
 ];
 
