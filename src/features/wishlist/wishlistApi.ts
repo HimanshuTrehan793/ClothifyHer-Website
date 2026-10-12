@@ -1,37 +1,24 @@
 import { baseApi } from "@/api/baseApi";
 import type { ApiSuccess } from "@/api/types";
+import { toProduct, type ApiProductInput } from "@/features/product/productApi";
 import type { WishlistEntry } from "@/interfaces/cart";
-
-/** Minimal product the wishlist endpoints return (no sizes/variants). */
-interface ApiWishlistProduct {
-  id: string;
-  name: string;
-  slug: string;
-  image: string;
-  base_price: number;
-  base_mrp: number | null;
-}
 
 interface ApiWishlistItem {
   id: string;
-  product: ApiWishlistProduct;
+  /* Card fields plus the slim colourway list (colours + size labels, each with
+     its out_of_stock flag) — the favourites card needs those to decide the
+     "Sold out" ribbon. */
+  product: ApiProductInput;
 }
 
-/* Server rows carry only a thumbnail product — enough for the card, but with
-   no sizes, so "move to bag" from a server wishlist routes to the PDP. */
+/* Mapped through the product adapter rather than hand-built, so `sizes`,
+   `variants` and the sold-out flags mean exactly what they do on a PLP card.
+   Hand-building this previously left `sizes: []` with no variants, which the
+   sold-out check reads as "nothing to buy" — every saved item showed Sold out.
+   Rows still omit per-size ids, so "move to bag" routes to the PDP. */
 const toEntry = (it: ApiWishlistItem): WishlistEntry => ({
   addedAt: 0,
-  product: {
-    id: it.product.id,
-    slug: it.product.slug,
-    brand: "ClothifyHer",
-    title: it.product.name,
-    category: "",
-    sizes: [],
-    image: it.product.image,
-    price: it.product.base_price,
-    mrp: it.product.base_mrp ?? undefined,
-  },
+  product: toProduct(it.product),
 });
 
 export const wishlistApi = baseApi.injectEndpoints({

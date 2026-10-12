@@ -54,6 +54,15 @@ interface ApiProduct {
   variants: ApiVariant[];
 }
 
+/* Not every endpoint ships a full product: the wishlist returns the card
+   fields plus colourways and nothing else. Only those are required here, so one
+   adapter can serve both without the slim payloads needing filler values. */
+export type ApiProductInput = Pick<
+  ApiProduct,
+  "id" | "name" | "slug" | "image" | "base_price"
+> &
+  Partial<ApiProduct>;
+
 /** Money arrives in rupees; this only coerces null/undefined away. */
 const money = (n: number | null | undefined): number | undefined =>
   n == null ? undefined : n;
@@ -119,7 +128,7 @@ const toVariant = (v: ApiVariant, fallbackImage: string): ProductVariant => {
  * fields the cards/PDP already read: `price`/`mrp` come from `base_*`, `sizes`
  * is the union across colours, `variants` keeps each colourway for the PDP.
  */
-export const toProduct = (p: ApiProduct): Product => {
+export const toProduct = (p: ApiProductInput): Product => {
   const variants = (p.variants ?? []).map((v) => toVariant(v, p.image));
   const sizeUnion = new Set(variants.flatMap((v) => v.sizes ?? []));
   return {
